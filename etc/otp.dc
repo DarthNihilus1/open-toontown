@@ -61,6 +61,7 @@ dclass AstronAccount {
   string CREATED db;
   string LAST_LOGIN db;
   string ACCOUNT_ID db;
+  uint32 ACCESS_LEVEL db;
 };
 
 struct BarrierData {
