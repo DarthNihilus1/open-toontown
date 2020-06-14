@@ -50,7 +50,8 @@ class DeveloperAccountDB(AccountDB):
             # We already have an account object, so we'll just return what we have.
             callback({'success': True,
                       'accountId': int(self.dbm[playToken]),
-                      'databaseId': playToken})
+                      'databaseId': playToken
+                      })
 
 
 class GameOperation:
@@ -90,6 +91,7 @@ class LoginOperation(GameOperation):
 
         self.databaseId = result.get('databaseId', 0)
         accountId = result.get('accountId', 0)
+        accessLevel = result.get('accessLevel', 0)
         if accountId:
             self.accountId = accountId
             self.__handleRetrieveAccount()
@@ -114,11 +116,13 @@ class LoginOperation(GameOperation):
                         'ACCOUNT_AV_SET_DEL': [],
                         'CREATED': time.ctime(),
                         'LAST_LOGIN': time.ctime(),
-                        'ACCOUNT_ID': str(self.databaseId)}
+                        'ACCOUNT_ID': str(self.databaseId),
+                        'ACCESS_LEVEL': self.accessLevel}
 
         self.loginManager.air.dbInterface.createObject(self.loginManager.air.dbId,
                                                        self.loginManager.air.dclassesByName['AstronAccountUD'],
-                                                       self.account, self.__handleAccountCreated)
+                                                       self.account, self.__handleAccount
+                                                      )
 
     def __handleAccountCreated(self, accountId):
         if not accountId:
@@ -174,7 +178,8 @@ class LoginOperation(GameOperation):
             'accountDays': self.getAccountDays(),
             'serverTime': int(time.time()),
             'toonAccountType': 'NO_PARENT_ACCOUNT',
-            'userName': str(self.databaseId)
+            'userName': str(self.databaseId),
+
         }
         responseBlob = json.dumps(responseData)
         self.loginManager.sendUpdateToChannel(self.sender, 'loginResponse', [responseBlob])
@@ -610,8 +615,10 @@ class LoadAvatarOperation(AvatarOperation):
         datagram.addUint16(cleanupDatagram.getLength())
         datagram.appendData(cleanupDatagram.getMessage())
         self.loginManager.air.send(datagram)
-
-        self.loginManager.air.sendActivate(self.avId, 0, 0, self.loginManager.air.dclassesByName['DistributedToonUD'])
+        accessLevel = self.account.get('ADMIN_ACCESS', 0)
+        accessLevel -= adminAccess % 100
+        self.loginManager.air.sendActivate(self.avId, 0, 0, self.loginManager.air.dclassesByName['DistributedToonUD'], {'setAccessLevel': [accessLevel]}
+                                                                                                                        )
 
         datagram = PyDatagram()
         datagram.addServerHeader(channel, self.loginManager.air.ourChannel, CLIENTAGENT_OPEN_CHANNEL)
