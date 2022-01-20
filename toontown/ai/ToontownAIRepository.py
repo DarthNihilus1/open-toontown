@@ -16,6 +16,7 @@ from toontown.coghq.FactoryManagerAI import FactoryManagerAI
 from toontown.coghq.LawOfficeManagerAI import LawOfficeManagerAI
 from toontown.coghq.MintManagerAI import MintManagerAI
 from toontown.coghq.PromotionManagerAI import PromotionManagerAI
+from toontown.estate.EstateManagerAI import EstateManagerAI
 from toontown.distributed.ToontownDistrictAI import ToontownDistrictAI
 from toontown.distributed.ToontownDistrictStatsAI import ToontownDistrictStatsAI
 from toontown.distributed.ToontownInternalRepository import ToontownInternalRepository
@@ -84,6 +85,7 @@ class ToontownAIRepository(ToontownInternalRepository):
         self.cogSuitMgr = None
         self.timeManager = None
         self.newsManager = None
+        self.estateManager = None
         self.welcomeValleyManager = None
         self.inGameNewsMgr = None
         self.catalogManager = None
@@ -196,6 +198,10 @@ class ToontownAIRepository(ToontownInternalRepository):
         self.newsManager = NewsManagerAI(self)
         self.newsManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
 
+        #Generate our estate manager...
+        self.estateMgr = EstateManagerAI(self)
+        self.estateMgr.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
+        
         # Generate our Welcome Valley manager...
         self.welcomeValleyManager = WelcomeValleyManagerAI(self)
         self.welcomeValleyManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
