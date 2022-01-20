@@ -6,7 +6,6 @@ from direct.distributed import DistributedCamera/AI/OV
 from otp.distributed import Account/AI/UD
 from otp.distributed import AstronAccount/AI/UD
 from otp.ai import TimeManager/AI
-from otp.ai import MagicWordManager/AI
 from otp.avatar import DistributedAvatar/AI/UD
 from otp.avatar import DistributedPlayer/AI
 from otp.friends import FriendManager/AI
@@ -61,6 +60,7 @@ dclass AstronAccount {
   string CREATED db;
   string LAST_LOGIN db;
   string ACCOUNT_ID db;
+  string ACCESS_LEVEL db;
 };
 
 struct BarrierData {
@@ -112,8 +112,6 @@ dclass TimeManager : DistributedObject {
   checkForGarbageLeaks(bool) airecv clsend;
   setNumAIGarbageLeaks(uint32);
   setClientGarbageLeak(uint32, string(0-1024)) airecv clsend;
-  checkAvOnDistrict(uint32, DoId) clsend airecv;
-  checkAvOnDistrictResult(uint32, DoId, bool);
 };
 
 dclass ObjectServer {
@@ -252,13 +250,8 @@ dclass DistributedPlayer : DistributedAvatar {
   WishNameState(string = "LOCKED") db ram;
   setPreviousAccess(uint8 = 0) required db airecv;
   setAccess(uint8 = 2) broadcast ownrecv required ram airecv;
+  setAccessLevel(uint16 accessLevel = 0) ownrecv required airecv;
   setAsGM(bool = 0) required ram broadcast ownrecv airecv;
-};
-
-dclass MagicWordManager : DistributedObject {
-  setMagicWord(string, uint32, uint32, string(0-256)) airecv clsend;
-  setMagicWordResponse(string) airecv;
-  setWho(uint32[]) airecv clsend;
 };
 
 dclass OtpAvatarManager : DistributedObject {
@@ -545,4 +538,3 @@ dclass AstronLoginManager : DistributedObject {
   requestRemoveAvatar(uint32) clsend;
   requestPlayAvatar(uint32) clsend;
 };
-

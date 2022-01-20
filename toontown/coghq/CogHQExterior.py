@@ -5,8 +5,8 @@ from direct.fsm import State
 from toontown.toonbase import ToontownGlobals
 from toontown.hood import ZoneUtil
 from pandac.PandaModules import *
-from libotp import *
-from libtoontown import *
+from panda3d.otp import *
+from panda3d.toontown import *
 from otp.distributed.TelemetryLimiter import RotationLimitToH, TLGatherAllAvs
 
 class CogHQExterior(BattlePlace.BattlePlace):
@@ -76,7 +76,7 @@ class CogHQExterior(BattlePlace.BattlePlace):
         self.tunnelOriginList = base.cr.hoodMgr.addLinkTunnelHooks(self, self.nodeList, self.zoneId)
         how = requestStatus['how']
         self.fsm.request(how, [requestStatus])
-        if base.cr.astronSupport and self.zoneId != ToontownGlobals.BossbotHQ:
+        if __astron__ and self.zoneId != ToontownGlobals.BossbotHQ:
             self.handleInterests()
 
     def exit(self):
@@ -139,7 +139,7 @@ class CogHQExterior(BattlePlace.BattlePlace):
         taskMgr.remove(base.localAvatar.uniqueName('finishSquishTask'))
         base.localAvatar.laffMeter.stop()
 
-    if config.GetBool('astron-support', True):
+    if __astron__:
         def handleInterests(self):
             # First, we need to load the DNA file for this Cog HQ.
             dnaStore = DNAStorage()
@@ -149,8 +149,8 @@ class CogHQExterior(BattlePlace.BattlePlace):
             # Next, we need to collect all of the visgroup zone IDs.
             self.zoneVisDict = {}
             for i in range(dnaStore.getNumDNAVisGroupsAI()):
-                groupFullName = dnaStore.getDNAVisGroupName(i)
                 visGroup = dnaStore.getDNAVisGroupAI(i)
+                groupFullName = visGroup.getName()
                 visZoneId = int(base.cr.hoodMgr.extractGroupName(groupFullName))
                 visZoneId = ZoneUtil.getTrueZoneId(visZoneId, self.zoneId)
                 visibles = []
@@ -161,4 +161,8 @@ class CogHQExterior(BattlePlace.BattlePlace):
                 self.zoneVisDict[visZoneId] = visibles
 
             # Finally, we want interest in all visgroups due to this being a Cog HQ.
-            base.cr.sendSetZoneMsg(self.zoneId, list(self.zoneVisDict.values())[0])
+            visList = list(self.zoneVisDict.values())[0]
+            if self.zoneId not in visList:
+                visList.append(self.zoneId)
+
+            base.cr.sendSetZoneMsg(self.zoneId, visList)

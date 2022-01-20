@@ -1,5 +1,5 @@
 from pandac.PandaModules import *
-from libotp import *
+from panda3d.otp import *
 from direct.directnotify import DirectNotifyGlobal
 from direct.fsm import ClassicFSM
 from direct.fsm import State
@@ -133,9 +133,3 @@ class DistributedNPCToonBase(DistributedToon.DistributedToon):
 
     def setPositionIndex(self, posIndex):
         self.posIndex = posIndex
-
-    def _startZombieCheck(self):
-        pass
-
-    def _stopZombieCheck(self):
-        pass

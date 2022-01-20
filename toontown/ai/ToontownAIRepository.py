@@ -1,7 +1,7 @@
 from direct.directnotify import DirectNotifyGlobal
 from panda3d.core import *
+from panda3d.toontown import *
 
-from libtoontown import *
 from otp.ai.AIZoneData import AIZoneDataStore
 from otp.ai.TimeManagerAI import TimeManagerAI
 from otp.distributed.OtpDoGlobals import *
@@ -44,10 +44,12 @@ from toontown.racing.DistributedViewPadAI import DistributedViewPadAI
 from toontown.racing.RaceManagerAI import RaceManagerAI
 from toontown.safezone.SafeZoneManagerAI import SafeZoneManagerAI
 from toontown.shtiker.CogPageManagerAI import CogPageManagerAI
+from toontown.spellbook.ToontownMagicWordManagerAI import ToontownMagicWordManagerAI
 from toontown.suit.SuitInvasionManagerAI import SuitInvasionManagerAI
 from toontown.toon import NPCToons
 from toontown.toonbase import ToontownGlobals
 from toontown.uberdog.DistributedInGameNewsMgrAI import DistributedInGameNewsMgrAI
+import os
 
 
 class ToontownAIRepository(ToontownInternalRepository):
@@ -59,6 +61,9 @@ class ToontownAIRepository(ToontownInternalRepository):
         self.doLiveUpdates = config.GetBool('want-live-updates', True)
         self.wantCogdominiums = config.GetBool('want-cogdominiums', True)
         self.useAllMinigames = config.GetBool('want-all-minigames', True)
+        self.dataFolder = config.GetString('server-data-folder', '')
+        if self.dataFolder:
+            self.dataFolder = self.dataFolder + '/'
         self.districtId = None
         self.district = None
         self.districtStats = None
@@ -84,6 +89,7 @@ class ToontownAIRepository(ToontownInternalRepository):
         self.catalogManager = None
         self.trophyMgr = None
         self.safeZoneManager = None
+        self.magicWordManager = None
         self.zoneTable = {}
         self.dnaStoreMap = {}
         self.dnaDataMap = {}
@@ -95,21 +101,29 @@ class ToontownAIRepository(ToontownInternalRepository):
         ToontownInternalRepository.handleConnected(self)
 
         # Generate our district...
+        self.notify.info('Generating district...')
         self.districtId = self.allocateChannel()
         self.district = ToontownDistrictAI(self)
         self.district.setName(self.districtName)
         self.district.generateWithRequiredAndId(self.districtId, self.getGameDoId(), OTP_ZONE_ID_DISTRICTS)
 
         # Claim ownership of that district...
+        self.notify.info('Declaring ownership...')
         self.district.setAI(self.ourChannel)
 
+        # Setup necessary files and things.
+        self.setupFiles()
+
         # Create our local objects.
+        self.notify.info('Creating local objects...')
         self.createLocals()
 
         # Create our global objects.
+        self.notify.info('Creating global objects...')
         self.createGlobals()
 
         # Create our zones.
+        self.notify.info('Creating zones...')
         self.createZones()
 
         # Make our district available, and we're done.
@@ -201,6 +215,10 @@ class ToontownAIRepository(ToontownInternalRepository):
         # Generate our safezone manager...
         self.safeZoneManager = SafeZoneManagerAI(self)
         self.safeZoneManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
+
+        # Generate our magic word manager...
+        self.magicWordManager = ToontownMagicWordManagerAI(self)
+        self.magicWordManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
 
     def generateHood(self, hoodConstructor, zoneId):
         # Bossbot HQ doesn't use DNA, so we skip over that.
@@ -451,5 +469,6 @@ class ToontownAIRepository(ToontownInternalRepository):
     def trueUniqueName(self, idString):
         return self.uniqueName(idString)
 
-    def sendQueryToonMaxHp(self, avId, callback):
-        pass  # TODO?
+    def setupFiles(self):
+        if not os.path.exists(self.dataFolder):
+            os.mkdir(self.dataFolder)

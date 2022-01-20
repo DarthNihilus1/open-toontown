@@ -96,11 +96,14 @@ class BattlePlace(Place.Place):
     def doEnterZone(self, newZoneId):
         if newZoneId != self.zoneId:
             if newZoneId != None:
-                if base.cr.astronSupport:
+                if __astron__:
                     if hasattr(self, 'zoneVisDict'):
                         visList = self.zoneVisDict[newZoneId]
                     else:
                         visList = base.cr.playGame.getPlace().loader.zoneVisDict[newZoneId]
+
+                    if newZoneId not in visList:
+                        visList.append(newZoneId)
 
                     base.cr.sendSetZoneMsg(newZoneId, visList)
                 else:
@@ -109,7 +112,7 @@ class BattlePlace(Place.Place):
             self.zoneId = newZoneId
         return
 
-    if config.GetBool('astron-support', True):
+    if __astron__:
         def genDNAFileName(self, zoneId):
             zoneId = ZoneUtil.getCanonicalZoneId(zoneId)
             hoodId = ZoneUtil.getCanonicalHoodId(zoneId)

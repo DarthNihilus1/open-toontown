@@ -175,7 +175,12 @@ class TTChatInputWhiteList(ChatInputWhiteListFrame):
 
     def applyFilter(self, keyArgs, strict = False):
         text = self.chatEntry.get(plain=True)
-        if len(text) > 0 and text[0] in ['~', '>']:
+        prefixes = []
+        if base.cr.magicWordManager and base.cr.wantMagicWords:
+            prefixes.append(base.cr.magicWordManager.chatPrefix)
+        if config.GetBool('exec-chat', 0):
+            prefixes.append('>')
+        if len(text) > 0 and text[0] in prefixes:
             self.okayToSubmit = True
         else:
             words = text.split(' ')
@@ -187,7 +192,7 @@ class TTChatInputWhiteList(ChatInputWhiteListFrame):
                     flag = 1
 
             for word in words:
-                if word == '' or self.whiteList.isWord(word.encode('utf-8')) or not base.cr.whiteListChatEnabled:
+                if word == '' or self.whiteList.isWord(word) or not base.cr.whiteListChatEnabled:
                     newwords.append(word)
                 else:
                     if self.checkBeforeSend:
@@ -201,7 +206,7 @@ class TTChatInputWhiteList(ChatInputWhiteListFrame):
 
             if not strict:
                 lastword = words[-1]
-                if lastword == '' or self.whiteList.isPrefix(lastword.encode('utf-8')) or not base.cr.whiteListChatEnabled:
+                if lastword == '' or self.whiteList.isPrefix(lastword) or not base.cr.whiteListChatEnabled:
                     newwords[-1] = lastword
                 elif flag:
                     newwords[-1] = '\x01WLDisplay\x01' + lastword + '\x02'

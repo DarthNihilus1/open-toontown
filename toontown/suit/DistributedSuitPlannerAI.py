@@ -1,4 +1,4 @@
-from libtoontown import *
+from panda3d.toontown import *
 from otp.ai.AIBaseGlobal import *
 from direct.distributed import DistributedObjectAI
 from . import SuitPlannerBase, DistributedSuitAI
@@ -104,7 +104,7 @@ class DistributedSuitPlannerAI(DistributedObjectAI.DistributedObjectAI, SuitPlan
                 self.hoodInfoIdx = index
 
         self.currDesired = None
-        self.baseNumSuits = (self.SuitHoodInfo[self.hoodInfoIdx][self.SUIT_HOOD_INFO_MIN] + self.SuitHoodInfo[self.hoodInfoIdx][self.SUIT_HOOD_INFO_MAX]) / 2
+        self.baseNumSuits = (self.SuitHoodInfo[self.hoodInfoIdx][self.SUIT_HOOD_INFO_MIN] + self.SuitHoodInfo[self.hoodInfoIdx][self.SUIT_HOOD_INFO_MAX]) // 2
         self.targetNumCogdos = 0
         if simbase.air.wantCogdominiums:
             self.targetNumCogdos = int(0.5 + self.SuitHoodInfo[self.hoodInfoIdx][self.SUIT_HOOD_INFO_BMIN] * self.CogdoRatio)
@@ -586,7 +586,7 @@ class DistributedSuitPlannerAI(DistributedObjectAI.DistributedObjectAI, SuitPlan
         targetFlyInNum = self.calcDesiredNumFlyInSuits()
         targetFlyInNum = min(targetFlyInNum, self.TOTAL_MAX_SUITS - self.numBuildingSuits)
         streetPoints = self.streetPointList[:]
-        flyInDeficit = (targetFlyInNum - self.numFlyInSuits + 3) / 4
+        flyInDeficit = (targetFlyInNum - self.numFlyInSuits + 3) // 4
         while flyInDeficit > 0:
             if not self.createNewSuit([], streetPoints):
                 break
@@ -602,7 +602,7 @@ class DistributedSuitPlannerAI(DistributedObjectAI.DistributedObjectAI, SuitPlan
             targetBuildingNum = int(len(suitBuildings) * self.SUIT_BUILDING_NUM_SUITS)
         targetBuildingNum += flyInDeficit
         targetBuildingNum = min(targetBuildingNum, self.TOTAL_MAX_SUITS - self.numFlyInSuits)
-        buildingDeficit = (targetBuildingNum - self.numBuildingSuits + 3) / 4
+        buildingDeficit = (targetBuildingNum - self.numBuildingSuits + 3) // 4
         while buildingDeficit > 0:
             if not self.createNewSuit(suitBuildings, streetPoints):
                 break
@@ -633,7 +633,7 @@ class DistributedSuitPlannerAI(DistributedObjectAI.DistributedObjectAI, SuitPlan
                 if oldestAge > timeout:
                     self.notify.info('Street %d has %d buildings; reclaiming %0.2f-hour-old building.' % (self.zoneId, len(suitBuildings), oldestAge / 3600.0))
                     oldest.b_setVictorList([0, 0, 0, 0])
-                    oldest.updateSavedBy(None)
+                    oldest.updateSavedBy([])
                     oldest.toonTakeOver()
         self.__waitForNextUpkeep()
         return Task.done

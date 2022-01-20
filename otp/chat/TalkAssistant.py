@@ -4,19 +4,19 @@ from otp.otpbase import OTPLocalizer
 from direct.directnotify import DirectNotifyGlobal
 from otp.otpbase import OTPGlobals
 from otp.speedchat import SCDecoders
-from pandac.PandaModules import *
+from panda3d.core import *
 from otp.chat.TalkMessage import TalkMessage
 from otp.chat.TalkHandle import TalkHandle
 import time
 from otp.chat.TalkGlobals import *
 from otp.chat.ChatGlobals import *
-from libotp import CFSpeech, CFTimeout, CFThought
+from panda3d.otp import CFSpeech, CFTimeout, CFThought
 ThoughtPrefix = '.'
 
 class TalkAssistant(DirectObject.DirectObject):
     ExecNamespace = None
     notify = DirectNotifyGlobal.directNotify.newCategory('TalkAssistant')
-    execChat = base.config.GetBool('exec-chat', 0)
+    execChat = ConfigVariableBool('exec-chat', 0).value
 
     def __init__(self):
         self.logWhispers = 1
@@ -25,7 +25,7 @@ class TalkAssistant(DirectObject.DirectObject):
         self.zeroTimeDay = time.time()
         self.zeroTimeGame = globalClock.getRealTime()
         self.floodThreshold = 10.0
-        self.useWhiteListFilter = base.config.GetBool('white-list-filter-openchat', 0)
+        self.useWhiteListFilter = ConfigVariableBool('white-list-filter-openchat', 0).value
         self.lastWhisperDoId = None
         self.lastWhisperPlayerId = None
         self.lastWhisper = None
@@ -249,16 +249,16 @@ class TalkAssistant(DirectObject.DirectObject):
         print('execMessage %s' % message)
         if not TalkAssistant.ExecNamespace:
             TalkAssistant.ExecNamespace = {}
-            exec('from pandac.PandaModules import *', globals(), self.ExecNamespace)
+            exec('from panda3d.core import *', globals(), self.ExecNamespace)
             self.importExecNamespace()
         try:
-            if not isClient():
+            if not __debug__ or __execWarnings__:
                 print('EXECWARNING TalkAssistant eval: %s' % message)
                 printStack()
             return str(eval(message, globals(), TalkAssistant.ExecNamespace))
         except SyntaxError:
             try:
-                if not isClient():
+                if not __debug__ or __execWarnings__:
                     print('EXECWARNING TalkAssistant exec: %s' % message)
                     printStack()
                 exec(message, globals(), TalkAssistant.ExecNamespace)
@@ -617,7 +617,7 @@ class TalkAssistant(DirectObject.DirectObject):
 
     def sendOpenTalk(self, message):
         error = None
-        if base.cr.wantMagicWords and len(message) > 0 and message[0] == '~':
+        if base.cr.magicWordManager and base.cr.wantMagicWords and len(message) > 0 and message[0] == base.cr.magicWordManager.chatPrefix:
             messenger.send('magicWord', [message])
             self.receiveDeveloperMessage(message)
         else:

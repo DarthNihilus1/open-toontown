@@ -45,7 +45,6 @@ from toontown.toonbase import ToontownAccessAI
 from toontown.toonbase import TTLocalizer
 from toontown.catalog import CatalogAccessoryItem
 from toontown.minigame import MinigameCreatorAI
-from . import ModuleListAI
 from functools import reduce
 if simbase.wantPets:
     from toontown.pets import PetLookerAI, PetObserve
@@ -68,16 +67,7 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
      ToontownGlobals.FT_Leg: (CogDisguiseGlobals.leftLegIndex, CogDisguiseGlobals.rightLegIndex),
      ToontownGlobals.FT_Arm: (CogDisguiseGlobals.leftArmIndex, CogDisguiseGlobals.rightArmIndex),
      ToontownGlobals.FT_Torso: (CogDisguiseGlobals.torsoIndex,)}
-    lastFlagAvTime = globalClock.getFrameTime()
-    flagCounts = {}
-    pingedAvs = {}
     WantTpTrack = simbase.config.GetBool('want-tptrack', False)
-    DbCheckPeriodPaid = simbase.config.GetInt('toon-db-check-period-paid', 10 * 60)
-    DbCheckPeriodUnpaid = simbase.config.GetInt('toon-db-check-period-unpaid', 1 * 60)
-    BanOnDbCheckFail = simbase.config.GetBool('want-ban-dbcheck', 0)
-    DbCheckAccountDateEnable = config.GetBool('account-blackout-enable', 1)
-    DbCheckAccountDateBegin = config.GetString('account-blackout-start', '2013-08-20 12:30:00')
-    DbCheckAccountDateDisconnect = config.GetBool('account-blackout-disconnect', 0)
     WantOldGMNameBan = simbase.config.GetBool('want-old-gm-name-ban', 1)
 
     def __init__(self, air):
@@ -213,8 +203,6 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
         self.hostedParties = []
         self.partiesInvitedTo = []
         self.partyReplyInfoBases = []
-        self.modulelist = ModuleListAI.ModuleList()
-        self._dbCheckDoLater = None
         return
 
     def generate(self):
@@ -225,11 +213,10 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
         DistributedPlayerAI.DistributedPlayerAI.announceGenerate(self)
         DistributedSmoothNodeAI.DistributedSmoothNodeAI.announceGenerate(self)
         if self.isPlayerControlled():
-            self._doDbCheck()
             if self.WantOldGMNameBan:
                 self._checkOldGMName()
             messenger.send('avatarEntered', [self])
-            if config.GetBool('astron-support', True):
+            if __astron__:
                 self.sendUpdate('setDefaultShard', [self.air.districtId])
         if hasattr(self, 'gameAccess') and self.gameAccess != 2:
             if self.hat[0] != 0:
@@ -248,9 +235,8 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
                 self.replaceItemInAccessoriesList(ToonDNA.SHOES, 0, 0, 0, self.shoes[0], self.shoes[1], self.shoes[2])
                 self.b_setShoesList(self.shoesList)
                 self.b_setShoes(0, 0, 0)
-        self.startPing()
 
-    if config.GetBool('astron-support', True):
+    if __astron__:
         def setLocation(self, parentId, zoneId):
             DistributedPlayerAI.DistributedPlayerAI.setLocation(self, parentId, zoneId)
             if self.isPlayerControlled():
@@ -273,72 +259,6 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
                             teleportAccess.append(ToontownGlobals.GoofySpeedway)
                             self.b_setTeleportAccess(teleportAccess)
 
-    def _doDbCheck(self, task = None):
-        self._dbCheckDoLater = None
-        self.air.sendQueryToonMaxHp(self.doId, self._handleDbCheckResult)
-        return Task.done
-
-    def _doDbCheckBan(self, desc):
-        if self.BanOnDbCheckFail:
-            self.ban(desc)
-        else:
-            self.air.writeServerEvent('suspicious', self.doId, desc)
-        self.requestDelete()
-
-    def _handleDbCheckResult(self, result):
-        if not self.isGenerated():
-            return
-        if result is None:
-            self._doDbCheckBan('toon %s not present in the database' % self.doId)
-        else:
-            self.air.securityMgr.getAccountId(self.doId, self._handleDbCheckGetAccountResult)
-        return
-
-    def _handleDbCheckGetAccountResult(self, accountId):
-        if not self.isGenerated():
-            return
-        if accountId is None:
-            self._renewDoLater()
-        else:
-            self.air.sendFieldQuery('AccountAI', 'ACCOUNT_AV_SET', accountId, self._handleDbCheckGetAvSetResult)
-            if DistributedToonAI.DbCheckAccountDateEnable:
-                self.air.sendFieldQuery('AccountAI', 'CREATED', accountId, self._handleDbCheckAccountCreatedResult)
-        return
-
-    def _handleDbCheckGetAvSetResult(self, avSet):
-        if not self.isGenerated():
-            return
-        renewDoLater = True
-        if avSet is None:
-            self._doDbCheckBan("toon %s's account has no ACCOUNT_AV_SET in the DB" % self.doId)
-            renewDoLater = False
-        elif self.doId not in avSet:
-            self._doDbCheckBan('toon %s not in ACCOUNT_AV_SET in the DB' % self.doId)
-            renewDoLater = False
-        self._renewDoLater(renewDoLater)
-        return
-
-    def _handleDbCheckAccountCreatedResult(self, created):
-        if not self.isGenerated():
-            return
-        if created is None:
-            self._doDbCheckBan("toon %s's account has no CREATED in the DB" % self.doId)
-        elif created >= DistributedToonAI.DbCheckAccountDateBegin:
-            msg = 'account created during invalid period (toon) %s' % created
-            if DistributedToonAI.DbCheckAccountDateDisconnect:
-                self.disconnect()
-                msg += ', disconnecting'
-            self.air.writeServerEvent('account', self.doId, msg)
-            self.notify.warning('%s ' % self.doId + msg)
-        return
-
-    def _renewDoLater(self, renew = True):
-        if renew:
-            delay = self.DbCheckPeriodUnpaid
-            if self.gameAccess == OTPGlobals.AccessFull:
-                delay = self.DbCheckPeriodPaid
-            self._dbCheckDoLater = taskMgr.doMethodLater(delay, self._doDbCheck, 'dbCheck-%s' % self.doId)
-
     def sendDeleteEvent(self):
         if simbase.wantPets:
             isInEstate = self.isInEstate()
@@ -351,9 +271,6 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
 
     def delete(self):
         self.notify.debug('----Deleting DistributedToonAI %d ' % self.doId)
-        if self._dbCheckDoLater:
-            taskMgr.remove(self._dbCheckDoLater)
-            self._dbCheckDoLater = None
         if self.isPlayerControlled():
             messenger.send('avatarExited', [self])
         if simbase.wantPets:
@@ -381,8 +298,6 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
         if simbase.wantPets:
             PetLookerAI.PetLookerAI.destroy(self)
         del self.kart
-        self.cleanupPing()
-        self.stopPing()
         self._sendExitServerEvent()
         DistributedSmoothNodeAI.DistributedSmoothNodeAI.delete(self)
         DistributedPlayerAI.DistributedPlayerAI.delete(self)
@@ -4194,31 +4109,6 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
             else:
                 self.air.writeServerEvent('suspicious', self.doId, '$ found in toon name')
 
-    def setModuleInfo(self, info):
-        avId = self.air.getAvatarIdFromSender()
-        key = 'outrageous'
-        self.moduleWhitelist = self.modulelist.loadWhitelistFile()
-        self.moduleBlacklist = self.modulelist.loadBlacklistFile()
-        for obfuscatedModule in info:
-            module = ''
-            p = 0
-            for ch in obfuscatedModule:
-                ic = ord(ch) ^ ord(key[p])
-                p += 1
-                if p >= len(key):
-                    p = 0
-                module += chr(ic)
-
-            if module not in self.moduleWhitelist:
-                if module in self.moduleBlacklist:
-                    self.air.writeServerEvent('suspicious', avId, 'Black List module %s loaded into process.' % module)
-                    if simbase.config.GetBool('want-ban-blacklist-module', False):
-                        commentStr = 'User has blacklist module: %s attached to their game process' % module
-                        dislId = self.DISLid
-                        simbase.air.banManager.ban(self.doId, dislId, commentStr)
-                else:
-                    self.air.writeServerEvent('suspicious', avId, 'Unknown module %s loaded into process.' % module)
-
     def teleportResponseToAI(self, toAvId, available, shardId, hoodId, zoneId, fromAvId):
         if not self.WantTpTrack:
             return
@@ -4250,181 +4140,3 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
             else:
                 return self.inventory._createStack
         return 'no inventory'
-
-    def flagAv(self, avId, reason, params):
-        self.notify.debug('reason: %s timepassed: %s' % (reason, globalClock.getFrameTime() - DistributedToonAI.lastFlagAvTime))
-        if reason == AV_FLAG_REASON_TOUCH and globalClock.getFrameTime() - DistributedToonAI.lastFlagAvTime > AV_TOUCH_CHECK_DELAY_AI:
-            DistributedToonAI.lastFlagAvTime = globalClock.getFrameTime()
-            av = self.air.doId2do.get(avId)
-            otherAv = self.air.doId2do.get(int(params[0]))
-            self.notify.debug('checking suspicious avatar positioning %s for %s with %s' % (avId, reason, params))
-            if av and otherAv and isinstance(av, DistributedToonAI) and isinstance(otherAv, DistributedToonAI) and av.zoneId == otherAv.zoneId and av.zoneId not in MinigameCreatorAI.MinigameZoneRefs:
-                self.notify.debug('...in zone %s' % av.zoneId)
-                componentNode = av.getParent().attachNewNode('blah')
-                componentNode.setPos(av.getComponentX(), av.getComponentY(), av.getComponentZ())
-                avPos = componentNode.getPos(av.getRender())
-                componentNode.reparentTo(otherAv.getParent())
-                componentNode.setPos(otherAv.getComponentX(), otherAv.getComponentY(), otherAv.getComponentZ())
-                otherAvPos = componentNode.getPos(otherAv.getRender())
-                componentNode.removeNode()
-                zDist = avPos.getZ() - otherAvPos.getZ()
-                avPos2D = copy.copy(avPos)
-                avPos2D.setZ(0)
-                otherAvPos2D = copy.copy(otherAvPos)
-                otherAvPos2D.setZ(0)
-                moveVec = avPos2D - otherAvPos2D
-                dist = moveVec.length()
-                self.notify.debug('2d dist between avs is %s %s %s' % (dist, avPos, otherAvPos))
-                if dist < AV_TOUCH_CHECK_DIST and zDist < AV_TOUCH_CHECK_DIST_Z:
-                    self.notify.debug('...moving!')
-                    if dist == 0.0:
-                        moveVec = Vec3(1.0, 0, 0)
-                    else:
-                        moveVec.normalize()
-                    moveVec = moveVec * AV_TOUCH_CHECK_DIST
-                    avHpr = av.getHpr(av.getRender())
-                    newX = avPos.getX() + moveVec.getX()
-                    newY = avPos.getY() + moveVec.getY()
-                    newZ = avPos.getZ() + moveVec.getZ()
-                    newH = avHpr.getX()
-                    newP = avHpr.getY()
-                    newR = avHpr.getZ()
-                    av.setPosHpr(av.getRender(), newX, newY, newZ, newH, newP, newR)
-                    newAvPos = av.getPos()
-                    if newAvPos.getX() > 3000 or newAvPos.getX() < -3000 or newAvPos.getY() > 3000 or newAvPos.getY() < -3000:
-                        return
-                    av.d_setXY(newAvPos.getX(), newAvPos.getY())
-                    self.notify.debug('setting ai pos: %s %s %s and sending pos: %s' % (newX,
-                     newY,
-                     newZ,
-                     newAvPos))
-                    if len(DistributedToonAI.flagCounts) > AV_FLAG_HISTORY_LEN:
-                        DistributedToonAI.flagCounts = {}
-                    avPairKey = str(min(av.doId, otherAv.doId)) + '+' + str(max(av.doId, otherAv.doId))
-                    prevCount = DistributedToonAI.flagCounts.setdefault(avPairKey, [{}, globalClock.getFrameTime(), {}])
-                    if av.doId not in prevCount[2]:
-                        prevCount[2][av.doId] = [None, None]
-                    if av.doId not in prevCount[0]:
-                        prevCount[0][av.doId] = 0
-                    self.notify.debug('moving av %s, newPos: %s oldPos: %s' % (av.doId, prevCount[2][av.doId], avPos))
-                    if prevCount[2][av.doId][0] == None or prevCount[2][av.doId][1] == None:
-                        pass
-                    elif prevCount[2][av.doId][0] != avPos.getX() or prevCount[2][av.doId][1] != avPos.getY():
-                        prevCount[0][av.doId] += 1
-                    prevCount[2][av.doId] = [newX, newY]
-                    if prevCount[0][av.doId] > AV_TOUCH_COUNT_LIMIT:
-                        if globalClock.getFrameTime() - prevCount[1] < AV_TOUCH_COUNT_TIME:
-                            zoneId = not hasattr(av, 'zoneId') and 'undef' or av.zoneId
-                            battleId = not hasattr(av, 'battleId') and 'undef' or av.battleId
-                            animName = not hasattr(av, 'animName') and 'undef' or av.animName
-                            inEstate = not hasattr(av, 'isInEstate') and 'undef' or av.isInEstate()
-                            ghostMode = not hasattr(av, 'ghostMode') and 'undef' or av.ghostMode
-                            immortalMode = not hasattr(av, 'immortalMode') and 'undef' or av.immortalMode
-                            isGm = not hasattr(av, '_isGM') and 'undef' or av._isGM
-                            valStr = '%s %s %s %s %s %s %s %s' % (otherAv.doId,
-                             zoneId,
-                             battleId,
-                             animName,
-                             inEstate,
-                             ghostMode,
-                             immortalMode,
-                             isGm)
-                            self.notify.info('av %s is consistently in an inappropriate position with %s...' % (av.doId, valStr))
-                            self.air.writeServerEvent('suspicious', avId, ' consistently in an inappropriate position with toon %s' % valStr)
-                            response = simbase.config.GetString('toon-pos-hack-response', 'nothing')
-                            av.handleHacking(response, 'collision and position hacking', [otherAv])
-                        del DistributedToonAI.flagCounts[avPairKey]
-        return
-
-    def handleHacking(self, response, comment, coconspirators = []):
-        if response == 'quietzone':
-            self.b_setLocation(self.parentId, ToontownGlobals.QuietZone)
-        elif response == 'disconnect':
-            self.disconnect()
-        elif response == 'disconnectall':
-            self.disconnect()
-            for coconspirator in coconspirators:
-                coconspirator.disconnect()
-
-        elif response == 'ban':
-            self.ban('collision and position hacking')
-            self.disconnect()
-        elif response == 'banall':
-            self.ban('collision and position hacking')
-            self.disconnect()
-            for coconspirator in coconspirators:
-                coconspirator.ban('collision and position hacking')
-                coconspirator.disconnect()
-
-    def requestPing(self, avId):
-        av = self.air.doId2do.get(avId)
-        if av:
-            from toontown.toon.DistributedNPCToonBaseAI import DistributedNPCToonBaseAI
-            if isinstance(av, DistributedNPCToonBaseAI):
-                return
-            if isinstance(av, DistributedToonAI) and avId not in DistributedToonAI.pingedAvs:
-                av.sendPing()
-        return Task.again
-
-    def sendPing(self):
-
-        def verify(theId):
-            if self.air:
-                msg = '%s failed to respond to ping!' % theId
-                self.notify.warning(msg)
-                self.air.writeServerEvent('suspicious', theId, msg)
-                self.cleanupPing()
-                disconnect = simbase.config.GetBool('client-ping-disconnect', True)
-                if disconnect:
-                    av = self.air.getDo(theId)
-                    if av:
-                        av.disconnect()
-            return Task.done
-
-        val = ''
-        for i in range(14):
-            val = val + random.choice('abcdefghijklmnopqrstuvwxyz')
-
-        self.sendUpdateToAvatarId(self.doId, 'ping', [val])
-        DistributedToonAI.pingedAvs[self.doId] = [globalClock.getFrameTime(), val]
-        delay = simbase.config.GetInt('client-ping-timeout', 150)
-        taskMgr.doMethodLater(delay, verify, 'pingverify-' + str(self.doId), extraArgs=[self.doId])
-
-    def pingresp(self, resp):
-        senderId = self.air.getAvatarIdFromSender()
-        if senderId not in DistributedToonAI.pingedAvs or self.air == None:
-            self.cleanupPing()
-            return
-        val = DistributedToonAI.pingedAvs[senderId][1]
-        key = 'monkeyvanilla!'
-        module = ''
-        p = 0
-        for ch in val:
-            ic = ord(ch) ^ ord(key[p])
-            p += 1
-            if p >= len(key):
-                p = 0
-            module += chr(ic)
-
-        match = module == resp
-        if not match:
-            msg = '%s failed to respond to ping! with invalid response' % senderId
-            self.notify.warning(msg)
-            self.air.writeServerEvent('suspicious', senderId, msg)
-        self.cleanupPing()
-        return
-
-    def cleanupPing(self):
-        taskMgr.remove('pingverify-' + str(self.doId))
-        if self.doId in DistributedToonAI.pingedAvs:
-            del DistributedToonAI.pingedAvs[self.doId]
-
-    def startPing(self):
-        from toontown.toon.DistributedNPCToonBaseAI import DistributedNPCToonBaseAI
-        if isinstance(self, DistributedNPCToonBaseAI):
-            return
-        delay = simbase.config.GetInt('client-ping-period', 60)
-        taskMgr.doMethodLater(delay, self.requestPing, 'requestping-' + str(self.doId), extraArgs=[self.doId])
-
-    def stopPing(self):
-        taskMgr.remove('requestping-' + str(self.doId))

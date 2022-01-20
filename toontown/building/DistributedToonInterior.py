@@ -1,6 +1,6 @@
 from toontown.toonbase.ToonBaseGlobal import *
 from pandac.PandaModules import *
-from libtoontown import *
+from panda3d.toontown import *
 from direct.interval.IntervalGlobal import *
 from direct.distributed.ClockDelta import *
 from toontown.toonbase import ToontownGlobals
@@ -137,28 +137,26 @@ class DistributedToonInterior(DistributedObject.DistributedObject):
         self.zoneId = zoneId
         self.block = block
 
-    def setToonData(self, toonData):
-        savedBy = pickle.loads(toonData)
+    def setSavedBy(self, savedBy):
         self.savedBy = savedBy
 
     def buildTrophy(self):
-        if self.savedBy == None:
+        if not self.savedBy:
             return
         numToons = len(self.savedBy)
         pos = 1.25 - 1.25 * numToons
         trophy = hidden.attachNewNode('trophy')
-        for avId, name, dnaTuple, isGM in self.savedBy:
-            frame = self.buildFrame(name, dnaTuple)
+        for avId, name, dnaString in self.savedBy:
+            frame = self.buildFrame(name, dnaString)
             frame.reparentTo(trophy)
             frame.setPos(pos, 0, 0)
             pos += 2.5
 
         return trophy
 
-    def buildFrame(self, name, dnaTuple):
+    def buildFrame(self, name, dnaString):
         frame = loader.loadModel('phase_3.5/models/modules/trophy_frame')
-        dna = ToonDNA.ToonDNA()
-        dna.newToonFromProperties(*dnaTuple)
+        dna = ToonDNA.ToonDNA(dnaString)
         head = ToonHead.ToonHead()
         head.setupHead(dna)
         head.setPosHprScale(0, -0.05, -0.05, 180, 0, 0, 0.55, 0.02, 0.55)
