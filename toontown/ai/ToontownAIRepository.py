@@ -98,7 +98,8 @@ class ToontownAIRepository(ToontownInternalRepository):
         self.hoods = []
         self.buildingManagers = {}
         self.suitPlanners = {}
-
+        self.__queryEstateContext = 0
+        self.__queryEstateFuncMap = {}
     def handleConnected(self):
         ToontownInternalRepository.handleConnected(self)
 
@@ -201,7 +202,7 @@ class ToontownAIRepository(ToontownInternalRepository):
         #Generate our estate manager...
         self.estateMgr = EstateManagerAI(self)
         self.estateMgr.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
-        
+
         # Generate our Welcome Valley manager...
         self.welcomeValleyManager = WelcomeValleyManagerAI(self)
         self.welcomeValleyManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
@@ -478,3 +479,129 @@ class ToontownAIRepository(ToontownInternalRepository):
     def setupFiles(self):
         if not os.path.exists(self.dataFolder):
             os.mkdir(self.dataFolder)
+
+    def getEstate(self, avId, zone, callback):
+        """
+        Asks the database to fill in details about this avatars
+        estate.
+        We make a request to the server and wait for its response.
+        """
+        context = self.__queryEstateContext
+        self.__queryEstateContext += 1
+        self.__queryEstateFuncMap[context] = callback
+        self.__sendGetEstate(avId, context)
+
+    def __sendGetEstate(self, avId, context):
+        """
+        Sends the query-object message to the server.  The return
+        message will be handled by __handleGetEstateResp().
+        See getEstate().
+        """
+        datagram = PyDatagram()
+        datagram.addServerHeader(
+            DBSERVER_ID, self.ourChannel, DBSERVER_GET_ESTATE)
+        datagram.addUint32(context)
+        # The avId we are querying.
+        datagram.addUint32(avId)
+        self.send(datagram)
+
+    def __handleGetEstateResp(self, di):
+        # Use the context to retrieve the callback parameter passed in
+        # to getEstate().
+        context = di.getUint32()
+        callback = self.__queryEstateFuncMap.get(context)
+        if callback == None:
+            self.notify.warning("Got unexpected estate context: %s" % (context))
+            return
+        del self.__queryEstateFuncMap[context]
+
+        # return code = 0 if estate was returned without problems
+        retCode = di.getUint8()
+
+        estateVal = {}
+        if (retCode == 0):
+            estateId = di.getUint32()
+            numFields = di.getUint16()
+            
+            for i in range(numFields):
+                key = di.getString()
+                #key = key[2:]
+                #right why to do this???? ask Roger and/or Dave
+                value = di.getString()
+                found = di.getUint8()
+                
+                #print key;
+                #print value;
+                #print found;
+
+                if found:
+                    # create another datagram for this value
+                    #vdg = PyDatagram(estateVal[i])
+                    #vdgi = PyDatagramIterator(vdg)
+                    # do something with this data
+                    estateVal[key] = value
+                
+                    
+            numHouses = di.getUint16()
+            self.notify.debug("numHouses = %s" % numHouses)
+            houseId = [None] * numHouses
+            for i in range(numHouses):
+                houseId[i] = di.getUint32()
+                self.notify.debug("houseId = %s" % houseId[i])
+                
+            numHouseKeys = di.getUint16()
+            self.notify.debug("numHouseKeys = %s" % numHouseKeys)
+            houseKey = [None] * numHouseKeys
+            for i in range(numHouseKeys):
+                houseKey[i] = di.getString()
+
+            numHouseVal = di.getUint16()
+            assert (numHouseVal == numHouseKeys)
+            tempHouseVal = [None] * numHouseVal
+            for i in range(numHouseVal):
+                numHouses2 = di.getUint16()
+                assert(numHouses2 == numHouses)
+                tempHouseVal[i] = [None] * numHouses
+                for j in range(numHouses):
+                    tempHouseVal[i][j] = di.getString()
+                    # do we need a check for "value found" here?
+
+            #print houseKey
+            #print tempHouseVal
+
+            numHouseFound = di.getUint16()
+
+
+            # keep track of which attributes are found
+            foundVal = [None] * numHouses
+            for i in range(numHouses):
+                foundVal[i] = [None] * numHouseVal
+                
+            # create empty dictionaries for each house
+            houseVal = []
+            for i in range(numHouses):
+                houseVal.append({})
+                
+            for i in range(numHouseVal):
+                hvLen = di.getUint16()
+                for j in range(numHouses):
+                    found = di.getUint8()
+                    if found:
+                        houseVal[j][houseKey[i]] = tempHouseVal[i][j]
+                        foundVal[j][i] = 1
+                    else:
+                        foundVal[j][i] = 0
+
+            numPets = di.getUint16()
+            petIds = []
+            for i in xrange(numPets):
+                petIds.append(di.getUint32())
+
+            # create estate with houses
+            # and call DistributedEstateAI's initEstateData func
+
+            # call function originally passed to getEstate
+            callback(estateId, estateVal, numHouses, houseId, houseVal,
+                     petIds, estateVal)
+        else:
+            print("ret code != 0, something went wrong with estate creation")

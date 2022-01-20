@@ -3,6 +3,8 @@ from panda3d.core import *
 from direct.showbase import PythonUtil
 from direct.distributed import DistributedObjectAI
 from direct.directnotify import DirectNotifyGlobal
+from direct.fsm.FSM import FSM
+
 from direct.showbase.PythonUtil import Functor
 from . import DistributedEstateAI
 from direct.task.Task import Task
@@ -11,7 +13,6 @@ from . import HouseGlobals
 import random
 
 TELEPORT_TO_OWNER_ONLY = 0
-
 class EstateManagerAI(DistributedObjectAI.DistributedObjectAI):
     notify = DirectNotifyGlobal.directNotify.newCategory("EstateManagerAI")
     #notify.setDebug(True)
@@ -33,7 +34,6 @@ class EstateManagerAI(DistributedObjectAI.DistributedObjectAI):
         self.healFrequency = 30 # seconds
 
         self.randomGenerator = random.Random()
-
         return None
 
     def delete(self):
@@ -336,8 +336,9 @@ class EstateManagerAI(DistributedObjectAI.DistributedObjectAI):
         #self.sendUpdateToAvatarId(avId, "setEstateZone", [avId, zoneId])
 
         # create the estate and generate the zone
-        callback = PythonUtil.Functor(self.handleGetEstate, avId, ownerId)
-        self.air.getEstate(avId, zoneId, callback)
+        #callback = PythonUtil.Functor(self.handleGetEstate, avId, ownerId)
+       #TODO get the data for estates via astron
+        #self.getEstate(avId, zoneId, callback)
 
     def __removeReferences(self, avId, zoneId):
         try:
