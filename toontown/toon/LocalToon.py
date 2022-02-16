@@ -1152,10 +1152,10 @@ class LocalToon(DistributedToon.DistributedToon, LocalAvatar.LocalAvatar):
         self.hideFurnitureGui()
         self.hideClarabelleGui()
         clarabelleHidden = 1
-        self.ignore(ToontownGlobals.FriendsListHotkey)
+        self.ignore(base.FRIENDS)
         if self.friendsListButtonActive and self.friendsListButtonObscured <= 0:
             self.bFriendsList.show()
-            self.accept(ToontownGlobals.FriendsListHotkey, self.sendFriendsListEvent)
+            self.accept(base.FRIENDS, self.sendFriendsListEvent)
             if self.clarabelleButtonObscured <= 0 and self.isTeleportAllowed():
                 if self.catalogNotify == ToontownGlobals.NewItems or self.mailboxNotify == ToontownGlobals.NewItems or self.simpleMailNotify == ToontownGlobals.NewItems or self.inviteMailNotify == ToontownGlobals.NewItems or self.awardNotify == ToontownGlobals.NewItems:
                     showClarabelle = not launcher or launcher.getPhaseComplete(5.5)

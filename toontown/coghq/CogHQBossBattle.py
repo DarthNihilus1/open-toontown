@@ -147,7 +147,7 @@ class CogHQBossBattle(BattlePlace.BattlePlace):
         base.localAvatar.book.hideButton()
         self.ignore(ToontownGlobals.StickerBookHotkey)
         self.ignore('enterStickerBook')
-        self.ignore(ToontownGlobals.OptionsPageHotkey)
+        self.ignore(base.BOOK)
 
     def exitFinalBattle(self):
         self.walkStateData.exit()
@@ -183,7 +183,7 @@ class CogHQBossBattle(BattlePlace.BattlePlace):
         base.localAvatar.book.hideButton()
         self.ignore(ToontownGlobals.StickerBookHotkey)
         self.ignore('enterStickerBook')
-        self.ignore(ToontownGlobals.OptionsPageHotkey)
+        self.ignore(base.BOOK)
         self.ignore(self.walkDoneEvent)
 
     def exitWalk(self):

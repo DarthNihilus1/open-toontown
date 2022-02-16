@@ -111,7 +111,7 @@ class ShtikerBook(DirectFrame, StateData.StateData):
         self.pageTabFrame.hide()
         self.ignore('shtiker-page-done')
         self.ignore(ToontownGlobals.StickerBookHotkey)
-        self.ignore(ToontownGlobals.OptionsPageHotkey)
+        self.ignore(base.BOOK)
         self.ignore('arrow_right')
         self.ignore('arrow_left')
         if base.config.GetBool('want-qa-regression', 0):
@@ -432,7 +432,7 @@ class ShtikerBook(DirectFrame, StateData.StateData):
         if base.config.GetBool('want-qa-regression', 0):
             self.notify.info('QA-REGRESSION: SHTICKERBOOK: Browse tabs %s' % page.pageName)
         self.ignore(ToontownGlobals.StickerBookHotkey)
-        self.ignore(ToontownGlobals.OptionsPageHotkey)
+        self.ignore(base.BOOK)
         localAvatar.newsButtonMgr.acceptEscapeKeyPress()
 
     def disableBookCloseButton(self):

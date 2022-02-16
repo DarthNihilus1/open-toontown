@@ -77,8 +77,8 @@ class ChatInputWhiteListFrame(FSM.FSM, DirectFrame):
         DirectFrame.destroy(self)
 
     def delete(self):
-        self.ignore('arrow_up-up')
-        self.ignore('arrow_down-up')
+        self.ignore(f'{base.MOVE_FORWARD}-up')
+        self.ignore(f'{base.MOVE_BACKWARDS}-up')
 
     def requestMode(self, mode, *args):
         return self.request(mode, *args)

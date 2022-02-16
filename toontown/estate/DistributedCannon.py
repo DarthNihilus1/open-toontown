@@ -1,26 +1,21 @@
-from pandac.PandaModules import *
-from toontown.toonbase.ToonBaseGlobal import *
-from toontown.toonbase import ToontownGlobals
-from direct.distributed.ClockDelta import *
-from direct.interval.IntervalGlobal import *
-from direct.fsm import ClassicFSM, State
-from direct.fsm import State
-from toontown.toonbase import ToontownGlobals
-from toontown.toonbase import ToontownTimer
-from direct.task.Task import Task
-from toontown.minigame import Trajectory
 import math
-from toontown.toon import ToonHead
-from toontown.effects import Splash
-from toontown.effects import DustCloud
-from toontown.minigame import CannonGameGlobals
-from . import CannonGlobals
-from direct.gui.DirectGui import *
-from pandac.PandaModules import *
-from toontown.toonbase import TTLocalizer
-from direct.distributed import DistributedObject
-from toontown.effects import Wake
+
 from direct.controls.ControlManager import CollisionHandlerRayStart
+from direct.distributed import DistributedObject
+from direct.distributed.ClockDelta import *
+from direct.fsm import ClassicFSM, State
+from direct.gui.DirectGui import *
+from direct.interval.IntervalGlobal import *
+from direct.task.Task import Task
+from panda3d.core import *
+from toontown.effects import DustCloud, Splash, Wake
+from toontown.minigame import CannonGameGlobals, Trajectory
+from toontown.toon import ToonHead
+from toontown.toonbase import ToontownGlobals, ToontownTimer, TTLocalizer
+from toontown.toonbase.ToonBaseGlobal import *
+
+from . import CannonGlobals
+
 LAND_TIME = 2
 WORLD_SCALE = 2.0
 GROUND_SCALE = 1.4 * WORLD_SCALE
@@ -58,11 +53,11 @@ class DistributedCannon(DistributedObject.DistributedObject):
     HIT_GROUND = 0
     HIT_TOWER = 1
     HIT_WATER = 2
-    FIRE_KEY = 'control'
-    UP_KEY = 'arrow_up'
-    DOWN_KEY = 'arrow_down'
-    LEFT_KEY = 'arrow_left'
-    RIGHT_KEY = 'arrow_right'
+    FIRE_KEY = base.JUMP
+    UP_KEY = base.MOVE_FORWARD
+    DOWN_KEY = base.MOVE_BACKWARDS
+    LEFT_KEY = base.MOVE_LEFT
+    RIGHT_KEY = base.MOVE_RIGHT
     BUMPER_KEY = 'delete'
     BUMPER_KEY2 = 'insert'
     INTRO_TASK_NAME = 'CannonGameIntro'

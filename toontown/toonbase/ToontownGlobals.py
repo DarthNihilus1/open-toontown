@@ -1670,3 +1670,64 @@ AV_TOUCH_CHECK_DIST_Z = 5.0
 AV_TOUCH_CHECK_TIMELIMIT_CL = 0.002
 AV_TOUCH_COUNT_LIMIT = 5
 AV_TOUCH_COUNT_TIME = 300
+
+
+# New Hotkeys globals
+Separater = '-'
+Shift = 'shift'
+Control = 'control'
+Release = 'up'
+HotkeyGroup = 'HotKeys'
+HotkeyUp = 0
+HotkeyDown = 1
+HotkeyLeft = 2
+HotkeyRight = 3
+HotkeyJump = 4
+HotkeyThrow = 5
+HotkeySprint = 6
+HotkeyBook = 7
+HotkeyTasks = 8
+HotkeyInventory = 9
+HotkeyFriends = 10
+HotkeyMap = 11
+HotkeyScreenshot = 12
+HotkeyChat = 13
+HotkeySecondaryBook = 14
+HotkeyGroupDefaults = {
+    HotkeyUp: 'arrow_up',
+    HotkeyDown: 'arrow_down',
+    HotkeyLeft: 'arrow_left',
+    HotkeyRight: 'arrow_right',
+    HotkeyJump: 'control',
+    HotkeyThrow: 'delete',
+    HotkeySprint: 'shift',
+    HotkeyBook: 'escape',
+    HotkeyTasks: 'end',
+    HotkeyInventory: 'home',
+    HotkeyFriends: 'f7',
+    HotkeyMap: 'alt',
+    HotkeyScreenshot: 'f9',
+    HotkeyChat: 't',
+    HotkeySecondaryBook: 'f8'
+}
+
+
+
+
+
+
+SpecialKeys = {
+    'page_up': 'Page Up',
+    'page_down': 'Page Down',
+    'escape': 'Esc',
+    'delete': 'Del',
+    'control': 'Ctrl',
+    'insert': 'Ins',
+    'arrow_up': 'Up Arrow',
+    'arrow_down': 'Down Arrow',
+    'arrow_left': 'Left Arrow',
+    'arrow_right': 'Right Arrow',
+    'num_lock': 'Number Lock',
+    'print_screen': 'Print Screen',
+    'caps_lock': 'Caps Lock'
+}

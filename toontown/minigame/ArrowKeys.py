@@ -2,11 +2,19 @@ from pandac.PandaModules import ModifierButtons
 from direct.showbase.DirectObject import DirectObject
 
 class ArrowKeys(DirectObject):
-    UP_KEY = 'arrow_up'
-    DOWN_KEY = 'arrow_down'
-    LEFT_KEY = 'arrow_left'
-    RIGHT_KEY = 'arrow_right'
-    JUMP_KEY = 'control'
+    try:
+        UP_KEY    = base.MOVE_FORWARD
+        DOWN_KEY  = base.MOVE_BACKWARDS
+        LEFT_KEY  = base.MOVE_LEFT
+        RIGHT_KEY = base.MOVE_RIGHT
+        JUMP_KEY  = base.JUMP
+    except NameError:
+        # Uberdog errors out so we need to define it for it
+        UP_KEY   = 'arrow_up'
+        DOWN_KEY = 'arrow_down'
+        LEFT_KEY  = 'arrow_left'
+        RIGHT_KEY = 'arrow_right'
+        JUMP_KEY  = 'control'
     UP_INDEX = 0
     DOWN_INDEX = 1
     LEFT_INDEX = 2
