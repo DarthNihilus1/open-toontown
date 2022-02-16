@@ -9,6 +9,8 @@ from direct.directnotify import DirectNotifyGlobal
 from otp.login import LeaveToPayDialog
 from direct.gui.DirectGui import *
 from panda3d.core import *
+from toontown.chat import ChatLog
+
 ChatEvent = 'ChatEvent'
 NormalChatEvent = 'NormalChatEvent'
 SCChatEvent = 'SCChatEvent'
@@ -161,9 +163,11 @@ class ChatManager(DirectObject.DirectObject):
     def stop(self):
         self.fsm.request('off')
         self.ignoreAll()
-
+        if hasattr(self, 'chatLog'):
+            self.chatLog.destroy()
     def start(self):
         self.fsm.request('mainMenu')
+        self.chatLog = ChatLog.ChatLog(self)
 
     def announceChat(self):
         messenger.send(ChatEvent)

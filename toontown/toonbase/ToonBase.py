@@ -81,6 +81,9 @@ class ToonBase(OTPBase.OTPBase):
         self.FRIENDS = self.controlManager.getKeyName('HotKeys', ToontownGlobals.HotkeyFriends).lower()
         self.STREET_MAP = self.controlManager.getKeyName('HotKeys', ToontownGlobals.HotkeyMap).lower()
         self.CHAT = self.controlManager.getKeyName("HotKeys", ToontownGlobals.HotkeyChat).lower()
+        self.BOOK_SECONDARY = self.controlManager.getKeyName('HotKeys', ToontownGlobals.HotkeySecondaryBook).lower()
+        self.CHAT_LOG = self.controlManager.getKeyName('HotKeys', ToontownGlobals.HotkeyChatlog).lower()
+        
         self.setBackgroundColor(ToontownGlobals.DefaultBackgroundColor)
         tpm = TextPropertiesManager.getGlobalPtr()
         candidateActive = TextProperties()

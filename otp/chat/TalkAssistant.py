@@ -440,7 +440,8 @@ class TalkAssistant(DirectObject.DirectObject):
                     self.historyComplete.append(newMessage)
                     self.historyGuild.append(newMessage)
                     messenger.send('NewOpenMessage', [newMessage])
-                    messenger.send('addChatHistory', [avatarName, None, None, None, message, WhisperPopup.WTGuild])
+                    # TODO implement WhisperPopup.WTGuild
+                    messenger.send('addChatHistory', [avatarName, None, None, None, message])
                 if newMessage.getBody() == OTPLocalizer.AntiSpamInChat:
                     self.spamDictByDoId[senderAvId] = 1
                 else:

@@ -15,6 +15,7 @@ class ChatLog(DirectButton):
     def __init__(self, chatMgr, **kwargs):
         self.chatMgr = chatMgr
         gui = loader.loadModel('phase_3/models/gui/ChatPanel')
+        self.wantGuildChat = ConfigVariableBool('want-guild-chat', False)
 
         def findNodes(names, model = gui):
             results = []
@@ -46,7 +47,7 @@ class ChatLog(DirectButton):
                            'bottomRight'])
         scaleNodes(nodes, 0.25)
 
-        args = {'parent': base.a2dBottomCenter, 'relief': None, 'geom': gui, 'geom_scale': (1, 1, 0.55),
+        args = {'parent': self.chatMgr.chatLogNode, 'relief': None, 'geom': gui, 'geom_scale': (1, 1, 0.55),
                 'sortOrder': DGG.FOREGROUND_SORT_INDEX}
         kwargs.update(args)
         DirectButton.__init__(self, **kwargs)
@@ -74,7 +75,7 @@ class ChatLog(DirectButton):
             systemTab['extraArgs'] = [3]
 
         else:
-            systemTab['extraArgs'] = 2
+            systemTab['extraArgs'] = [2]
 
         self.chatTabs.append(mainTab)
         self.chatTabs.append(whisperTab)
@@ -88,7 +89,6 @@ class ChatLog(DirectButton):
         self.texts = []
         self.textNodes = []
         self.notificationBubbles = []
-
         # Generate the stuff for each tab
         for x in range(len(self.chatTabs)):
             chatTab = self.chatTabs[x]
@@ -117,7 +117,7 @@ class ChatLog(DirectButton):
 
         self.guildHint = None
         scaleNodes(nodes, 0.25)
-        if base.cr.wantSpeedchatPlus():
+        if self.wantGuildChat:
             self.guildEntry = DirectEntry(self, relief=None, state=DGG.NORMAL, geom=gui, geom_scale=(1, 1, 0.085),
                                           text_scale=0.045, text_pos=(0.0, -0.05, 0.0), pos=(0.0, 0.0, -0.575),
                                           numLines=1, width=20.0, cursorKeys=False)
@@ -159,8 +159,10 @@ class ChatLog(DirectButton):
         self.hotkey = None
 
         self.opacity = 0.5
+        self.closeChatlog()
 
     def setGuildHint(self, hintText):
+        return
         if not self.guildEntry:
             return
 
@@ -169,6 +171,7 @@ class ChatLog(DirectButton):
         self.guildHint = hintText
 
     def resetGuildHint(self):
+        return
         self.setGuildHint(TTLocalizer.ChatLogSendToGuild)
 
     def sendGuildChat(self, *args):
@@ -208,8 +211,8 @@ class ChatLog(DirectButton):
             self.chatMgr.chatInputNormal.chatEntry['backgroundFocus'] = 1
 
     def enableHotkey(self):
-        self.hotkey = base.getHotkey(ToontownGlobals.HotkeyInteraction, ToontownGlobals.HotkeyChatlog)
-        self.accept(self.hotkey, self.openChatlog)
+        self.hotkey = base.CHAT_LOG
+        self.accept(self.hotkey, self.toggleChatLog)
 
     def disableHotkey(self):
         self.ignore(self.hotkey)
@@ -304,7 +307,8 @@ class ChatLog(DirectButton):
         self['geom_color'] = (r, g, b, self.opacity)
         for tab in self.chatTabs:
             tab['geom_color'] = (r, g, b, self.opacity)
-        self.guildEntry['geom_color'] = (r, g, b, self.opacity)
+        if self.wantGuildChat:
+            self.guildEntry['geom_color'] = (r, g, b, self.opacity)
 
     def __addChatHistory(self, name=None, font=None, speechFont=None, color=None,
                          chat=None, type=WhisperPopup.WTNormal):
@@ -313,7 +317,7 @@ class ChatLog(DirectButton):
         forcePush = False
 
         if name and not font and not speechFont:
-            tab = 1
+            tab = 0
         if not speechFont:
             speechFont = OTPGlobals.getInterfaceFont()
         if font == ToontownGlobals.getSuitFont():
@@ -323,6 +327,7 @@ class ChatLog(DirectButton):
                 name, chat = chat.split(":", 1)
             else:
                 name = 'System'
+            tab = 2
         if not font:
             font = OTPGlobals.getInterfaceFont()
 
@@ -330,8 +335,9 @@ class ChatLog(DirectButton):
             tab = 3
             if isinstance(color, int):
                 color = Vec4(0.8, 0.3, 0.6, 1)
-        elif type == WhisperPopup.WTGuild:
-            tab = 2
+        # TODO implement WhisperPopup.WTGuild
+        #elif type == WhisperPopup.WTGuild:
+           # tab = 2
         elif type == WhisperPopup.WTQuickTalker:
             forcePush = True
 
@@ -342,7 +348,7 @@ class ChatLog(DirectButton):
                                                          #                            OTPLocalizer.getPropertiesForColor(color),
                                         #                           name, colon, OTPLocalizer.getPropertiesForFont(speechFont),
                                                                        #              chat))
-        self.logs[tab].append(f'{name}{colon}{chat}')
+        self.logs[tab].append(f'{name} {colon} {chat}')
 
         while len(self.logs[tab]) > 250:
             del self.logs[tab][0]
@@ -466,9 +472,11 @@ class ChatLog(DirectButton):
         notificationBubble.hide()
 
         if index == 2:
-            self.guildEntry.show()
+            if self.wantGuildChat:
+                self.guildEntry.show()
         else:
-            self.guildEntry.hide()
+            if self.wantGuildChat:
+                self.guildEntry.hide()
 
     def acceptWheelMovements(self, bind):
         self.accept('wheel_up-up', self.__wheel, [-1])

@@ -59,11 +59,10 @@ class ControlManager(DirectObject):
 
         if hasattr(base, 'localAvatar') and hasattr(base.localAvatar, 'chatMgr') and base.localAvatar.chatMgr:
             base.localAvatar.chatMgr.setBackgroundFocus(disableChat)
-           #TODO add to chatlog
-           # if not disableChat:
-            #    base.localAvatar.chatMgr.chatLog.enableHotkey()
-           # else:
-             #   base.localAvatar.chatMgr.chatLog.disableHotkey()
+            if not disableChat:
+                base.localAvatar.chatMgr.chatLog.enableHotkey()
+            else:
+                base.localAvatar.chatMgr.chatLog.disableHotkey()
         
     def getHotkeyName(self, category, id, released=False):
         hotkey = 'hotkey-' + category + '-' + str(id)
