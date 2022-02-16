@@ -2891,3 +2891,49 @@ def timeElapsedString(timeDelta):
         return '1 minute ago'
     else:
         return '%s minutes ago' % (timeDelta.seconds / 60)
+
+
+HotkeyCategoryNames = {
+       "HotKeys": "HotKeys",
+
+}
+
+
+HotkeyUp = 0
+HotkeyDown = 1
+HotkeyLeft = 2
+HotkeyRight = 3
+HotkeyJump = 4
+HotkeyThrow = 5
+HotkeySprint = 6
+HotkeyBook = 7
+HotkeyTasks = 8
+HotkeyInventory = 9
+HotkeyFriends = 10
+HotkeyMap = 11
+HotkeyScreenshot = 12
+HotkeyChat = 13
+HotkeySecondaryBook = 14
+HotkeyNames = {
+    0: {
+           HotkeyUp: 'Move Forward',
+           HotkeyDown: 'Move Backwards',
+           HotkeyLeft: 'Move Left',
+           HotkeyRight: 'Move Right',
+           HotkeyJump: 'Jump',
+           HotkeyThrow: 'Throw',
+           HotkeySprint: 'Sprint',
+           HotkeyBook: 'Open Book',
+           HotkeyTasks: 'Open Tasks',
+           HotkeyInventory: 'Open Inventory',
+           HotkeyFriends: 'Open Friends',
+           HotkeyMap: 'Open map',
+           HotkeyScreenshot: 'screenshot',
+           HotkeyChat: 'chat', 
+           HotkeySecondaryBook: 'Open Book Secondary'
+    }
+
+
+
+
+}

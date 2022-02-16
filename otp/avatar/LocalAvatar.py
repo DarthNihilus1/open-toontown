@@ -4,7 +4,7 @@ from direct.gui.DirectGui import *
 from direct.showbase.PythonUtil import *
 from direct.interval.IntervalGlobal import *
 from direct.showbase.InputStateGlobal import inputState
-from direct.controls import ControlManager
+from toontown.toonbase import ToontownControlManager
 from . import DistributedAvatar
 from direct.task import Task
 from otp.otpbase import OTPGlobals
@@ -19,6 +19,7 @@ from direct.controls.ObserverWalker import ObserverWalker
 from direct.controls.SwimWalker import SwimWalker
 from direct.controls.TwoDWalker import TwoDWalker
 from toontown.chat import ChatLog
+from toontown.toonbase import ToontownGlobals
 
 class LocalAvatar(DistributedAvatar.DistributedAvatar, DistributedSmoothNode.DistributedSmoothNode):
     notify = DirectNotifyGlobal.directNotify.newCategory('LocalAvatar')
@@ -44,7 +45,7 @@ class LocalAvatar(DistributedAvatar.DistributedAvatar, DistributedSmoothNode.Dis
         base.pushCTrav(self.cTrav)
         self.cTrav.setRespectPrevTransform(1)
         self.avatarControlsEnabled = 0
-        self.controlManager = ControlManager.ControlManager(True, passMessagesThrough)
+        self.controlManager = ToontownControlManager.ToontownControlManager(True, passMessagesThrough)
         self.initializeCollisions()
         self.initializeSmartCamera()
         self.cameraPositions = []
@@ -932,24 +933,28 @@ class LocalAvatar(DistributedAvatar.DistributedAvatar, DistributedSmoothNode.Dis
         return self.animMultiplier
 
     def enableRun(self):
-        self.accept('arrow_up', self.startRunWatch)
-        self.accept('arrow_up-up', self.stopRunWatch)
-        self.accept('control-arrow_up', self.startRunWatch)
-        self.accept('control-arrow_up-up', self.stopRunWatch)
-        self.accept('alt-arrow_up', self.startRunWatch)
-        self.accept('alt-arrow_up-up', self.stopRunWatch)
-        self.accept('shift-arrow_up', self.startRunWatch)
-        self.accept('shift-arrow_up-up', self.stopRunWatch)
+        moveForward = base.MOVE_FORWARD
+        #Get hotkey name for moving backwards
+        moveBackwards = base.MOVE_BACKWARDS
+        self.accept(moveForward, self.startRunWatch)
+        self.accept(moveBackwards, self.stopRunWatch)
+        self.accept(f"control-{moveForward}", self.startRunWatch)
+        self.accept(f"control-{moveForward}-up", self.stopRunWatch)
+        self.accept(f"alt-{moveForward}", self.startRunWatch)
+        self.accept(f"alt-{moveForward}-up", self.stopRunWatch)
+        self.accept(f"shift-{moveForward}", self.startRunWatch)
+        self.accept(f"shift-{moveForward}-up", self.stopRunWatch)
 
     def disableRun(self):
-        self.ignore('arrow_up')
-        self.ignore('arrow_up-up')
-        self.ignore('control-arrow_up')
-        self.ignore('control-arrow_up-up')
-        self.ignore('alt-arrow_up')
-        self.ignore('alt-arrow_up-up')
-        self.ignore('shift-arrow_up')
-        self.ignore('shift-arrow_up-up')
+        moveForward = base.MOVE_FORWARD
+        self.ignore(f"{moveForward}")
+        self.ignore(f"{moveForward}-up")
+        self.ignore(f"control-{moveForward}-up")
+        self.ignore(f"control-{moveForward}-up")
+        self.ignore(f"alt-{moveForward}")
+        self.ignore(f"alt-{moveForward}-up")
+        self.ignore(f"shift-{moveForward}")
+        self.ignore(f"shift-{moveForward}-up")
 
     def startRunWatch(self):
 

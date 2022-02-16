@@ -1,20 +1,27 @@
 import math
 import random
-from pandac.PandaModules import NodePath, Point3, VBase4, TextNode, Vec3, deg2Rad, CollisionSegment, CollisionHandlerQueue, CollisionNode, BitMask32, SmoothMover
-from direct.fsm import FSM
+
+from direct.directnotify import DirectNotifyGlobal
 from direct.distributed import DistributedObject
 from direct.distributed.ClockDelta import globalClockDelta
-from direct.directnotify import DirectNotifyGlobal
-from direct.interval.IntervalGlobal import Sequence, ProjectileInterval, Parallel, LerpHprInterval, ActorInterval, Func, Wait, SoundInterval, LerpPosHprInterval, LerpScaleInterval
+from direct.fsm import FSM
 from direct.gui.DirectGui import DGG, DirectButton, DirectLabel, DirectWaitBar
+from direct.interval.IntervalGlobal import (ActorInterval, Func,
+                                            LerpHprInterval,
+                                            LerpPosHprInterval,
+                                            LerpScaleInterval, Parallel,
+                                            ProjectileInterval, Sequence,
+                                            SoundInterval, Wait)
 from direct.task import Task
-from toontown.suit import Suit
-from toontown.suit import SuitDNA
-from toontown.toonbase import ToontownGlobals
-from toontown.toonbase import TTLocalizer
-from toontown.coghq import BanquetTableBase
-from toontown.coghq import DinerStatusIndicator
+from panda3d.core import (BitMask32, CollisionHandlerQueue, CollisionNode,
+                          CollisionSegment, NodePath, Point3,
+                          TextNode, VBase4, Vec3, deg2Rad)
+from panda3d.direct import SmoothMover
 from toontown.battle import MovieUtil
+from toontown.coghq import BanquetTableBase, DinerStatusIndicator
+from toontown.suit import Suit, SuitDNA
+from toontown.toonbase import ToontownGlobals, TTLocalizer
+
 
 class DistributedBanquetTable(DistributedObject.DistributedObject, FSM.FSM, BanquetTableBase.BanquetTableBase):
     notify = DirectNotifyGlobal.directNotify.newCategory('DistributedBanquetTable')
@@ -644,14 +651,14 @@ class DistributedBanquetTable(DistributedObject.DistributedObject, FSM.FSM, Banq
          gui.find('**/CloseBtn_Rllvr'),
          gui.find('**/CloseBtn_UP')), relief=None, scale=2, text=TTLocalizer.BossbotPitcherLeave, text_scale=0.04, text_pos=(0, -0.07), text_fg=VBase4(1, 1, 1, 1), pos=(1.05, 0, -0.82), command=self.__exitPitcher)
         self.accept('escape', self.__exitPitcher)
-        self.accept('control', self.__controlPressed)
-        self.accept('control-up', self.__controlReleased)
+        self.accept(base.JUMP, self.__controlPressed)
+        self.accept(f'{base.JUMP}-up', self.__controlReleased)
         self.accept('InputState-forward', self.__upArrow)
         self.accept('InputState-reverse', self.__downArrow)
         self.accept('InputState-turnLeft', self.__leftArrow)
         self.accept('InputState-turnRight', self.__rightArrow)
-        self.accept('arrow_up', self.__upArrowKeyPressed)
-        self.accept('arrow_down', self.__downArrowKeyPressed)
+        self.accept(base.MOVE_FORWARD, self.__upArrowKeyPressed)
+        self.accept(base.MOVE_BACKWARDS, self.__downArrowKeyPressed)
         taskMgr.add(self.__watchControls, self.watchControlsName)
         taskMgr.doMethodLater(5, self.__displayPitcherAdvice, self.pitcherAdviceName)
         self.arrowVert = 0
@@ -665,14 +672,14 @@ class DistributedBanquetTable(DistributedObject.DistributedObject, FSM.FSM, Banq
             self.closeButton = None
         self.__cleanupPitcherAdvice()
         self.ignore('escape')
-        self.ignore('control')
-        self.ignore('control-up')
+        self.ignore(base.JUMP)
+        self.ignore(f'{base.JUMP}-up')
         self.ignore('InputState-forward')
         self.ignore('InputState-reverse')
         self.ignore('InputState-turnLeft')
         self.ignore('InputState-turnRight')
-        self.ignore('arrow_up')
-        self.ignore('arrow_down')
+        self.ignore(base.MOVE_FORWARD)
+        self.ignore(base.MOVE_BACKWARDS)
         self.arrowVert = 0
         self.arrowHorz = 0
         taskMgr.remove(self.watchControlsName)

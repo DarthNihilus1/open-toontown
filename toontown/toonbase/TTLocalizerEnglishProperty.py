@@ -304,3 +304,8 @@ TPhaveFun = 0.1
 TPjoinUs = 0.1
 TBSOSPSPenter = 0.1
 TexitButton = 0.8
+
+DSDcancelPos = (0, -0.02)
+DSDcancel = 0.06
+CSButton = 0.06
+CSKeyButton = 0.06

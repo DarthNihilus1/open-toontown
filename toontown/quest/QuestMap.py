@@ -278,14 +278,13 @@ class QuestMap(DirectFrame):
 
     def acceptOnscreenHooks(self):
         if self.wantToggle:
-            self.accept(ToontownGlobals.MapHotkey, self.toggle)
+            self.accept(base.STREET_MAP, self.toggle)
         else:
-            self.accept(ToontownGlobals.MapHotkeyOn, self.show)
-            self.accept(ToontownGlobals.MapHotkeyOff, self.hide)
+            self.accept(base.STREET_MAP, self.show)
+            self.accept(f'{base.STREET_MAP}-up', self.hide)
         self.updateMap()
 
     def ignoreOnscreenHooks(self):
-        self.ignore(ToontownGlobals.MapHotkey)
-        self.ignore(ToontownGlobals.MapHotkeyOn)
-        self.ignore(ToontownGlobals.MapHotkeyOff)
+        self.ignore(base.STREET_MAP)
+        self.ignore(f'{base.STREET_MAP}-up')
         self.obscureButton()

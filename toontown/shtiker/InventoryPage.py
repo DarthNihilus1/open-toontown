@@ -1,9 +1,10 @@
-from . import ShtikerPage
-from toontown.toonbase import ToontownBattleGlobals
 from direct.gui.DirectGui import *
-from pandac.PandaModules import *
-from toontown.toonbase import ToontownGlobals
-from toontown.toonbase import TTLocalizer
+from panda3d.core import *
+from toontown.toonbase import (ToontownBattleGlobals, ToontownGlobals,
+                               TTLocalizer)
+
+from . import ShtikerPage
+
 
 class InventoryPage(ShtikerPage.ShtikerPage):
 
@@ -118,19 +119,19 @@ class InventoryPage(ShtikerPage.ShtikerPage):
         return
 
     def acceptOnscreenHooks(self):
-        self.accept(ToontownGlobals.InventoryHotkeyOn, self.showInventoryOnscreen)
-        self.accept(ToontownGlobals.InventoryHotkeyOff, self.hideInventoryOnscreen)
+        self.accept(base.INVENTORY, self.showInventoryOnscreen)
+        self.accept(f'{base.INVENTORY}-up', self.hideInventoryOnscreen)
 
     def ignoreOnscreenHooks(self):
-        self.ignore(ToontownGlobals.InventoryHotkeyOn)
-        self.ignore(ToontownGlobals.InventoryHotkeyOff)
+        self.ignore(base.INVENTORY)
+        self.ignore(f'{base.INVENTORY}-up')
 
     def showInventoryOnscreen(self):
         messenger.send('wakeup')
-        timedif = globalClock.getRealTime() - self.lastInventoryTime
+        timedif = base.clock.getRealTime() - self.lastInventoryTime
         if timedif < 0.7:
             return
-        self.lastInventoryTime = globalClock.getRealTime()
+        self.lastInventoryTime = base.clock.getRealTime()
         if self.onscreen or base.localAvatar.questPage.onscreen:
             return
         self.onscreen = 1
