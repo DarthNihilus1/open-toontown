@@ -506,6 +506,7 @@ class Avatar(Actor, ShadowCaster):
                             dialogue = self.__chatDialogueList[pageNumber]
                         else:
                             dialogue = None
+                        messenger.send('addChatHistory', [self.name, None, None, None, self.__chatMessage])
                         self.playCurrentDialogue(dialogue, self.__chatFlags)
                 else:
                     self.clearChat()

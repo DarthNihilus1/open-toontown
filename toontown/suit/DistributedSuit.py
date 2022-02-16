@@ -634,6 +634,9 @@ class DistributedSuit(DistributedSuitBase.DistributedSuitBase, DelayDeletable):
                     base.playSfx(self.soundChatBubble, node=self)
             elif self.nametag.getChatStomp() > 0:
                 self.playDialogueForString(self.nametag.getStompText(), self.nametag.getStompDelay())
+            
+            messenger.send('addChatHistory', [self.name, ToontownGloabls.getSuitFont(), None, None, self.nametag.getChatText()])
+
         return
 
     def playDialogueForString(self, chatString, delay = 0.0):

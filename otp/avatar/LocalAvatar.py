@@ -18,6 +18,7 @@ from direct.controls.GravityWalker import GravityWalker
 from direct.controls.ObserverWalker import ObserverWalker
 from direct.controls.SwimWalker import SwimWalker
 from direct.controls.TwoDWalker import TwoDWalker
+from toontown.chat import ChatLog
 
 class LocalAvatar(DistributedAvatar.DistributedAvatar, DistributedSmoothNode.DistributedSmoothNode):
     notify = DirectNotifyGlobal.directNotify.newCategory('LocalAvatar')
@@ -51,6 +52,7 @@ class LocalAvatar(DistributedAvatar.DistributedAvatar, DistributedSmoothNode.Dis
         self.runTimeout = 2.5
         self.customMessages = []
         self.chatMgr = chatMgr
+        self.chatLog = ChatLog.ChatLog(self.chatMgr)
         base.talkAssistant = talkAssistant
         self.commonChatFlags = 0
         self.garbleChat = 1
@@ -1118,6 +1120,7 @@ class LocalAvatar(DistributedAvatar.DistributedAvatar, DistributedSmoothNode.Dis
 
     def startChat(self):
         self.chatMgr.start()
+        self.chatLog.enableHotkey()
         self.accept(OTPGlobals.WhisperIncomingEvent, self.handlePlayerFriendWhisper)
         self.accept(OTPGlobals.ThinkPosHotkey, self.thinkPos)
         self.accept(OTPGlobals.PrintCamPosHotkey, self.printCamPos)
@@ -1126,6 +1129,8 @@ class LocalAvatar(DistributedAvatar.DistributedAvatar, DistributedSmoothNode.Dis
 
     def stopChat(self):
         self.chatMgr.stop()
+        self.chatLog.disableHotkey()
+        self.chatLog.hide()
         self.ignore(OTPGlobals.WhisperIncomingEvent)
         self.ignore(OTPGlobals.ThinkPosHotkey)
         self.ignore(OTPGlobals.PrintCamPosHotkey)

@@ -9758,3 +9758,14 @@ InteractivePropTrackBonusTerms = {0: 'Super Toon-Up!',
  5: 'Super Squirt!',
  6: ''}
 PlayingCardUnknown = 'Card Name is unknown'
+
+
+
+
+
+# Chat log
+ChatLogTabMain = 'Main'
+ChatLogTabWhispers = 'Whispers'
+ChatLogTabGlobal = 'Global'
+ChatLogTabSystem = 'System'
+ChatLogSendToGuild = 'Send to guild'
