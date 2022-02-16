@@ -135,8 +135,8 @@ class ControlSettingsDialog(DirectFrame):
     def exit(self):
         base.controlManager.setChanging(False)
         base.transitions.noTransitions()
-        #if hasattr(base, 'localAvatar') and hasattr(base.localAvatar, 'chatMgr') and base.localAvatar.chatMgr:
-            #base.localAvatar.chatMgr.setBackgroundFocus(base.localAvatar.chatMgr.wantBackgroundFocus, True)
+        if hasattr(base, 'localAvatar') and hasattr(base.localAvatar, 'chatMgr') and base.localAvatar.chatMgr:
+            base.localAvatar.chatMgr.setBackgroundFocus(base.localAvatar.chatMgr.wantBackgroundFocus)
         self.infoLabel['text'] = TTLocalizer.ControlSettingsInfoLabelDefault
         if self.button:
             self.button.clearColorScale()

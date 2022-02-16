@@ -415,14 +415,12 @@ class ChatManager(DirectObject.DirectObject):
         self.chatInputSpeedChat.hide()
 
     def enterNormalChat(self):
-        if base.localAvatar.controlManager.wantWASD:
-            base.localAvatar.controlManager.disableWASD()
+        base.localAvatar.controlManager.disableWASD()
         result = self.chatInputNormal.activateByData()
         return result
 
     def exitNormalChat(self):
-        if base.localAvatar.controlManager.wantWASD:
-            base.localAvatar.controlManager.enableWASD()
+        base.localAvatar.controlManager.enableWASD()
         self.chatInputNormal.deactivate()
 
     def enterOpenChatWarning(self):
