@@ -235,3 +235,4 @@ class OTPBase(ShowBase):
         if self.win != None:
             return self.win.isValid()
         return 0
+    

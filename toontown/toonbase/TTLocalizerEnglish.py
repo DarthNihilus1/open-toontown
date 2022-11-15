@@ -9758,3 +9758,4 @@ InteractivePropTrackBonusTerms = {0: 'Super Toon-Up!',
  5: 'Super Squirt!',
  6: ''}
 PlayingCardUnknown = 'Card Name is unknown'
+ConfirmExitMessage = 'Are you sure you want to exit?'

@@ -17,6 +17,7 @@ from toontown.toonbase import ToontownAccess
 from toontown.toonbase import TTLocalizer
 from toontown.toonbase import ToontownBattleGlobals
 from toontown.launcher import ToontownDownloadWatcher
+from toontown.toontowngui import TTDialog
 
 class ToonBase(OTPBase.OTPBase):
     notify = DirectNotifyGlobal.directNotify.newCategory('ToonBase')
@@ -55,6 +56,8 @@ class ToonBase(OTPBase.OTPBase):
         self.wantDynamicShadows = 0
         self.exitErrorCode = 0
         camera.setPosHpr(0, 0, 0, 0, 0, 0)
+        base.win.setCloseRequestEvent("promptConfirmationWindow")
+        self.accept("promptConfirmationWindow", self.promptConfirmationWindow)
         self.camLens.setFov(ToontownGlobals.DefaultCameraFov)
         self.camLens.setNearFar(ToontownGlobals.DefaultCameraNear, ToontownGlobals.DefaultCameraFar)
         self.musicManager.setVolume(0.65)
@@ -357,7 +360,7 @@ class ToonBase(OTPBase.OTPBase):
     def getExitErrorCode(self):
         return self.exitErrorCode
 
-    def userExit(self):
+    def userExit(self):            
         try:
             self.localAvatar.d_setAnimState('TeleportOut', 1)
         except:
@@ -395,3 +398,27 @@ class ToonBase(OTPBase.OTPBase):
 
     def playMusic(self, music, looping = 0, interrupt = 1, volume = None, time = 0.0):
         OTPBase.OTPBase.playMusic(self, music, looping, interrupt, volume, time)
+
+    # add confirmation window when you click the x button in windowed mode
+     
+        
+    def promptConfirmationWindow(self):
+        self.confirmExitGui = TTDialog.TTGlobalDialog(doneEvent='confirmExit', message=TTLocalizer.ConfirmExitMessage, style=TTDialog.TwoChoice)
+        self.confirmExitGui.show()
+        self.confirmExitGui.doneStatus = None
+
+        self.accept('confirmExit', self._handleConfirmExit)
+        
+    def _handleConfirmExit(self):
+        status = self.confirmExitGui.doneStatus
+        if status == 'ok':
+            self.userExit()
+        else:
+            if hasattr(self, 'confirmExitGui'):
+                self.confirmExitGui.cleanup()
+                del self.confirmExitGui
+
+
+
+
+ 
