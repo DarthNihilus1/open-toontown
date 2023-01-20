@@ -284,21 +284,6 @@ class MaxToon(MagicWord):
         toon.b_setCogParts([*CogDisguiseGlobals.PartsPerSuitBitmasks])
         toon.b_setCogTypes([SuitDNA.suitsPerDept - 1] * 4)
         toon.b_setCogLevels([ToontownGlobals.MaxCogSuitLevel] * 4)
-        # give access to all emotes , teleport access to all playgrounds , and doodle phrases 
-        playgrounds = list(ToontownGlobals.HoodsForTeleportAll)
-        emotes = list(toon.getEmoteAccess())
-        for emoteNum in OTPLocalizer.EmoteFuncDict.values():
-            # skip the emotes that are not functional
-            if emoteNum in [17, 18, 19 ]:
-                continue
-            if emoteNum >= len(emotes):
-                continue
-            emotes[emoteNum] = 1
-                    
-        toon.b_setEmoteAccess(emotes)
-        toon.b_setHoodsVisited(playgrounds)
-        toon.b_setTeleportAccess(playgrounds)
-        toon.b_setPetTrickPhrases(range(7))
 
         return f"Successfully maxed {toon.getName()}!"
 
