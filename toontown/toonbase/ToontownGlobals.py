@@ -1671,3 +1671,26 @@ AV_TOUCH_CHECK_DIST_Z = 5.0
 AV_TOUCH_CHECK_TIMELIMIT_CL = 0.002
 AV_TOUCH_COUNT_LIMIT = 5
 AV_TOUCH_COUNT_TIME = 300
+EmoteListNoDupes = ['Wave',
+                    'Happy',
+                    'Sad',
+                    'Angry',
+                    'Sleepy',
+                    'Shrug',
+                    'Dance',
+                    'Think',
+                    'Bored',
+                    'Applause',
+                    'Cringe',
+                    'Confused',
+                    'Belly Flop',
+                    'Bow',
+                    'Banana Peel',
+                    'Resistance Salute',
+                    'Surprise',
+                    'Cry',
+                    'Delighted',
+                    'Furious',
+                    'Laugh',
+]
+
