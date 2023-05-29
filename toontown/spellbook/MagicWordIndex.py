@@ -350,8 +350,10 @@ class Minigame(MagicWord):
             mgId = ToontownGlobals.MinigameNames.get(minigame)
 
         if any((isTeleport, isRequest)):
-            if isTeleport and (ZoneUtil.isDynamicZone(toon.zoneId) or not toon.zoneId == mgSzId):
-                return "Target needs to be in a playground to teleport to a minigame."
+            if isTeleport:
+                if ZoneUtil.isDynamicZone(toon.zoneId) or not toon.zoneId == mgSzId:
+                    return "Target needs to be in a playground to teleport to a minigame."
+                mgSzId = ToontownGlobals.ToontownCentral if ZoneUtil.isWelcomeValley(mgSzId) else mgSzId
             MinigameCreatorAI.RequestMinigame[avId] = (mgId, mgKeep, mgDiff, mgSzId)
             if isTeleport:
                 try:
