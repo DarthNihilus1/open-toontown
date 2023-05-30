@@ -121,6 +121,8 @@ from toontown.building import DistributedElevator/AI
 from toontown.building import DistributedElevatorFSM/AI
 from toontown.building import DistributedElevatorExt/AI
 from toontown.building import DistributedElevatorInt/AI
+from toontown.building import DistributedEndlessElevator/AI
+from toontown.building import DistributedEndlessSuitInterior/AI
 from toontown.coghq import DistributedFactoryElevatorExt/AI
 from toontown.coghq import DistributedMintElevatorExt/AI
 from toontown.coghq import DistributedLawOfficeElevatorExt/AI
@@ -723,11 +725,11 @@ dclass DistributedSuitPlanner : DistributedObject {
 dclass DistributedSuitBase : DistributedObject {
   denyBattle();
   setDNAString(blob) required broadcast ram;
-  setLevelDist(int16) required broadcast ram;
+  setLevelDist(int64) required broadcast ram;
   setBrushOff(int16) broadcast;
   setSkelecog(uint8) required broadcast ram;
   setSkeleRevives(uint8) required broadcast ram;
-  setHP(int16) required broadcast ram;
+  setHP(int64) required broadcast ram;
 };
 
 dclass DistributedSuit : DistributedSuitBase {
@@ -885,7 +887,7 @@ dclass DistributedBattleBase : DistributedObject {
   setInitialSuitPos(int16/10, int16/10, int16/10) required broadcast ram;
   setMembers(uint32[], string, string, string, string, string, uint32[], string, string, string, string, int16) required broadcast ram;
   adjust(int16) broadcast;
-  setMovie(int8, uint32[], uint32[], int8, int8, int8, int32, int16[], int16, int16, int16[], int8, int8, int8, int8, int8, int32, int16[], int16, int16, int16[], int8, int8, int8, int8, int8, int32, int16[], int16, int16, int16[], int8, int8, int8, int8, int8, int32, int16[], int16, int16, int16[], int8, int8, int8, int8, int8, int16[], int8, int8, int8, int8, int8, int8, int16[], int8, int8, int8, int8, int8, int8, int16[], int8, int8, int8, int8, int8, int8, int16[], int8, int8, int8) required broadcast ram;
+  setMovie(int8, uint64[], uint64[], int8, int8, int8, int64, int64[], int16, int16, int64[], int8, int8, int8, int8, int8, int64, int64[], int16, int16, int64[], int8, int8, int8, int8, int8, int64, int64[], int16, int16, int64[], int8, int8, int8, int8, int8, int64, int64[], int16, int16, int64[], int8, int8, int8, int8, int8, int64[], int8, int8, int8, int8, int8, int8, int16[], int8, int8, int8, int8, int8, int8, int64[], int8, int8, int8, int8, int8, int8, int64[], int8, int8, int8) required broadcast ram;
   setChosenToonAttacks(uint32[], int16[], int16[], int32[]) broadcast ram;
   setBattleExperience(int32, int16[], int16[], uint32[], int16[], int16[], int16[], int16[], uint32[], int32, int16[], int16[], uint32[], int16[], int16[], int16[], int16[], uint32[], int32, int16[], int16[], uint32[], int16[], int16[], int16[], int16[], uint32[], int32, int16[], int16[], uint32[], int16[], int16[], int16[], int16[], uint32[], uint8[], int16[], uint32[]) required broadcast ram;
   denyLocalToonJoin();
@@ -1631,7 +1633,13 @@ dclass DistributedSuitInterior : DistributedObject {
   elevatorDone() airecv clsend;
   reserveJoinDone() airecv clsend;
 };
-
+dclass DistributedEndlessSuitInterior: DistributedSuitInterior
+{
+  setZoneId(uint32) required broadcast ram;
+  setExtZoneId(uint32) required broadcast ram;
+  setNumFloors(int32);
+  setDistBldgDoId(uint32) required broadcast ram;
+}
 dclass DistributedCogdoBarrel : DistributedObject {
   requestGrab() airecv clsend;
   setIndex(uint32) required broadcast ram;
@@ -1967,7 +1975,9 @@ dclass DistributedElevatorFloor : DistributedElevatorFSM {
 dclass DistributedElevatorExt : DistributedElevator {
   setFloor(int8) broadcast ram;
 };
-
+dclass DistributedEndlessElevator: DistributedElevatorExt {
+  setEndlessInteriorZone(uint32 zoneId);
+};
 dclass DistributedLawOfficeElevatorExt : DistributedElevatorExt {
   setEntranceId(uint8) required broadcast ram;
   setLawOfficeInteriorZone(uint32);

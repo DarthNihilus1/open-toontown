@@ -35,7 +35,7 @@ def getSuitVitals(name, level = -1):
     dict['level'] = getActualFromRelativeLevel(name, level)
     if dict['level'] == 11:
         level = 0
-    dict['hp'] = data['hp'][level]
+    dict['hp'] = calculateHealth(data, level)
     dict['def'] = data['def'][level]
     attacks = data['attacks']
     alist = []
@@ -62,10 +62,20 @@ def pickSuitAttack(attacks, suitLevel):
     index = 0
     total = 0
     for c in attacks:
-        total = total + c[3][suitLevel]
+        # check if the suitLevel is  in range of c[3] if not use the last value of c[3]
+        
+        if suitLevel < len(c[3]):
+            total = total + c[3][suitLevel]
+        else:
+            total = total + c[3][-1]
+
 
     for c in attacks:
-        count = count + c[3][suitLevel]
+        # check if the suitLevel is  in range of c[3] if not use the last value of c[3]
+        if suitLevel < len(c[3]):
+                count = count + c[3][suitLevel]
+        else:
+                count = count + c[3][-1]
         if randNum < count:
             attackNum = index
             notify.debug('picking attack %d' % attackNum)
@@ -90,12 +100,20 @@ def pickSuitAttack(attacks, suitLevel):
         return attackNum
     return
 
+def calculateHealth(stats, level):
+   return (stats['level'] + 1 + level) * (stats['level'] + 2 + level)
 
-def getSuitAttack(suitName, suitLevel, attackNum = -1):
+
+    
+    
+    
+def getSuitAttack(suitName, suitLevel, attackNum=-1, suit=None):
+    # If no attack is specified, choose one based on frequency values
     attackChoices = SuitAttributes[suitName]['attacks']
-    if attackNum == -1:
+    if (attackNum == -1):
         notify.debug('getSuitAttack: picking attacking for %s' % suitName)
         attackNum = pickSuitAttack(attackChoices, suitLevel)
+
     attack = attackChoices[attackNum]
     adict = {}
     adict['suitName'] = suitName
@@ -103,9 +121,24 @@ def getSuitAttack(suitName, suitLevel, attackNum = -1):
     adict['name'] = name
     adict['id'] = list(SuitAttacks.keys()).index(name)
     adict['animName'] = SuitAttacks[name][0]
-    adict['hp'] = attack[1][suitLevel]
-    adict['acc'] = attack[2][suitLevel]
-    adict['freq'] = attack[3][suitLevel]
+
+    try:
+        adict['hp'] = attack[1][suitLevel]
+    except IndexError:
+        if suit:
+            actualLevel = suit.getActualLevel()
+            adict['hp'] = (actualLevel + 1) * (actualLevel + 2)
+    try:
+        adict['acc'] = attack[2][suitLevel]
+    except:
+        # Relative level
+        # TODO check low tier higher lvl suits
+        if suitLevel > 4:
+            adict['acc'] = 80
+    try:
+        adict['freq'] = attack[3][suitLevel]
+    except:
+        adict['freq'] = attack[3][-1]
     adict['group'] = SuitAttacks[name][1]
     return adict
 

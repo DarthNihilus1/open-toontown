@@ -395,3 +395,9 @@ class ToonBase(OTPBase.OTPBase):
 
     def playMusic(self, music, looping = 0, interrupt = 1, volume = None, time = 0.0):
         OTPBase.OTPBase.playMusic(self, music, looping, interrupt, volume, time)
+    
+    def toggleVSync(self):
+        # TODO when settings are implemented
+        pass
+
+

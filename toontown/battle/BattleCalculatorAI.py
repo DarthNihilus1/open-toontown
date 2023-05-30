@@ -240,7 +240,12 @@ class BattleCalculatorAI:
     def __targetDefense(self, suit, atkTrack):
         if atkTrack == HEAL:
             return 0
-        suitDef = SuitBattleGlobals.SuitAttributes[suit.dna.name]['def'][suit.getLevel()]
+        # check if ['def'][suit.getLevel()] is in range of the list
+        if suit.getLevel() < len(SuitBattleGlobals.SuitAttributes[suit.dna.name]['def']):
+            suitDef = SuitBattleGlobals.SuitAttributes[suit.dna.name]['def'][suit.getLevel()]
+        else:
+            # set it to the last value in the list
+            suitDef = SuitBattleGlobals.SuitAttributes[suit.dna.name]['def'][len(SuitBattleGlobals.SuitAttributes[suit.dna.name]['def']) - 1]
         return -suitDef
 
     def __createToonTargetList(self, attackIndex):
@@ -1118,7 +1123,12 @@ class BattleCalculatorAI:
         atkType = self.battle.suitAttacks[attackIndex][SUIT_ATK_COL]
         atkInfo = SuitBattleGlobals.getSuitAttack(theSuit.dna.name, theSuit.getLevel(), atkType)
         atkAcc = atkInfo['acc']
-        suitAcc = SuitBattleGlobals.SuitAttributes[theSuit.dna.name]['acc'][theSuit.getLevel()]
+        # check if the suit's relative level is in the range of  of this list ,
+        # if it isn't use the last index 
+        if theSuit.getLevel() >= len(SuitBattleGlobals.SuitAttributes[theSuit.dna.name]['acc']):
+            suitAcc = SuitBattleGlobals.SuitAttributes[theSuit.dna.name]['acc'][len(SuitBattleGlobals.SuitAttributes[theSuit.dna.name]['acc']) - 1]
+        else:
+            suitAcc = SuitBattleGlobals.SuitAttributes[theSuit.dna.name]['acc'][theSuit.getLevel()]
         acc = atkAcc
         randChoice = random.randint(0, 99)
         if self.notify.getDebug():
@@ -1171,7 +1181,13 @@ class BattleCalculatorAI:
                         atkType = attack[SUIT_ATK_COL]
                         theSuit = self.battle.findSuit(attack[SUIT_ID_COL])
                         atkInfo = SuitBattleGlobals.getSuitAttack(theSuit.dna.name, theSuit.getLevel(), atkType)
-                        result = atkInfo['hp']
+                        try:
+                            result = atkInfo['hp']
+                        except BaseException:                           
+                            if atkInfo['group'] != SuitBattleGlobals.ATK_TGT_SINGLE:
+                                result = 2 + theSuit.getActualLevel() 
+                            else:
+                                result = 1 + theSuit.getActualLevel() 
             targetIndex = self.battle.activeToons.index(toonId)
             attack[SUIT_HP_COL][targetIndex] = result
 

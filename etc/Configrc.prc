@@ -101,3 +101,4 @@ server-data-folder data
 # TEMPORARY
 skip-friend-quest true
 skip-phone-quest true
+sync-video #f 

@@ -8,7 +8,7 @@ from direct.fsm import State
 from toontown.minigame import Purchase
 from otp.avatar import DistributedAvatar
 from . import Hood
-from toontown.building import SuitInterior
+from toontown.building import EndlessSuitInterior, SuitInterior
 from toontown.cogdominium import CogdoInterior
 from toontown.toon.Toon import teleportDebug
 
@@ -33,11 +33,16 @@ class ToonHood(Hood.Hood):
           'minigame']),
          State.State('purchase', self.enterPurchase, self.exitPurchase, ['quietZone', 'minigame', 'safeZoneLoader']),
          State.State('suitInterior', self.enterSuitInterior, self.exitSuitInterior, ['quietZone', 'townLoader', 'safeZoneLoader']),
+         State.State('endlessSuitInterior',
+                                                         self.enterEndlessSuitInterior,
+                                                         self.exitEndlessSuitInterior,
+                                                         ['quietZone', 'safeZoneLoader' ]),
          State.State('cogdoInterior', self.enterCogdoInterior, self.exitCogdoInterior, ['quietZone', 'townLoader', 'safeZoneLoader']),
          State.State('minigame', self.enterMinigame, self.exitMinigame, ['purchase']),
          State.State('quietZone', self.enterQuietZone, self.exitQuietZone, ['safeZoneLoader',
           'townLoader',
           'suitInterior',
+          'endlessSuitInterior',
           'cogdoInterior',
           'minigame']),
          State.State('final', self.enterFinal, self.exitFinal, [])], 'start', 'final')
@@ -191,3 +196,44 @@ class ToonHood(Hood.Hood):
 
     def handleMinigameDone(self):
         return None
+    
+    def enterEndlessSuitInterior(self, requestStatus=None):
+        """ The handling of entering the endless suit interior.
+
+        
+        Args:
+            requestStatus (_type_, optional): the status requested. Defaults to None. 
+        """
+        self.notify.debug("enterEndlessSuitInterior")
+        self.placeDoneEvent = 'endless-suit-interior-done'
+        self.acceptOnce(self.placeDoneEvent, self.handleEndlessSuitInteriorDone)
+        self.place = EndlessSuitInterior.EndlessSuitInterior(self, self.fsm,
+                                                        self.placeDoneEvent)
+        self.place.load()
+        self.place.enter(requestStatus)
+        base.cr.playGame.setPlace(self.place)
+
+    def exitEndlessSuitInterior(self):
+        """
+        The handling of exiting the endless suit interior.
+        """
+        self.notify.debug("exitEndlessSuitInterior()")
+        self.ignore(self.placeDoneEvent)
+        del self.placeDoneEvent
+        self.place.exit()
+        self.place.unload()
+        self.place=None
+        base.cr.playGame.setPlace(self.place)
+
+    def handleEndlessSuitInteriorDone(self):
+        """
+        This handles the endless suit interior being done.
+        """
+        self.notify.debug("handleSuitInteriorDone()")
+        doneStatus = self.place.getDoneStatus()
+        if self.isSameHood(doneStatus):
+            self.fsm.request("quietZone", [doneStatus])
+        else:
+            # ...we're leaving the hood.
+            self.doneStatus = doneStatus
+            messenger.send(self.doneEvent)

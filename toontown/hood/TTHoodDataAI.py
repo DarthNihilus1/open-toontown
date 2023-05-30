@@ -6,6 +6,7 @@ from toontown.safezone import TTTreasurePlannerAI
 from toontown.classicchars import DistributedMickeyAI
 from toontown.safezone import ButterflyGlobals
 from direct.task import Task
+from toontown.building import DistributedEndlessElevatorAI
 
 class TTHoodDataAI(HoodDataAI.HoodDataAI):
     notify = DirectNotifyGlobal.directNotify.newCategory('TTHoodDataAI')
@@ -14,11 +15,15 @@ class TTHoodDataAI(HoodDataAI.HoodDataAI):
         hoodId = ToontownGlobals.ToontownCentral
         if zoneId == None:
             zoneId = hoodId
+        self.zoneId = zoneId
         HoodDataAI.HoodDataAI.__init__(self, air, zoneId, hoodId)
         return
 
     def startup(self):
         HoodDataAI.HoodDataAI.startup(self)
+        self.endlessElevator = DistributedEndlessElevatorAI.DistributedEndlessElevatorAI(self.air, None, antiShuffle = 0, minLaff = 0) # antiShufflePOI
+        self.endlessElevator.generateWithRequired(self.zoneId)
+        self.addDistObj(self.endlessElevator)
         trolley = DistributedTrolleyAI.DistributedTrolleyAI(self.air)
         trolley.generateWithRequired(self.zoneId)
         trolley.start()
@@ -34,6 +39,7 @@ class TTHoodDataAI(HoodDataAI.HoodDataAI):
         if simbase.blinkTrolley:
             taskMgr.doMethodLater(0.5, self._deleteTrolley, 'deleteTrolley')
         messenger.send('TTHoodSpawned', [self])
+
 
     def shutdown(self):
         HoodDataAI.HoodDataAI.shutdown(self)

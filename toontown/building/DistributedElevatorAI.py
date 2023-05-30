@@ -18,7 +18,10 @@ class DistributedElevatorAI(DistributedObjectAI.DistributedObjectAI):
         self.type = ELEVATOR_NORMAL
         self.countdownTime = ElevatorData[self.type]['countdown']
         self.bldg = bldg
-        self.bldgDoId = bldg.getDoId()
+        if bldg:
+            self.bldgDoId = bldg.getDoId()
+        else:
+            self.bldgDoId = 0
         self.seats = []
         self.setAntiShuffle(antiShuffle)
         self.setMinLaff(minLaff)
