@@ -296,8 +296,8 @@ class RestockInventory(MagicWord):
 
     def handleWord(self, invoker, avId, toon, *args):
         toon.inventory.maxOutInv()
-        toon.d_setInventory()
-        return ("Maxing out inventory for " + toon._name)
+        toon.d_setInventory(toon.inventory.makeNetString())
+        return ("Maxing out inventory for " + toon.getName() + ".")
 
 class EmptyInventory(MagicWord):
     aliases = ['nostuff', 'emptyinv', 'zeroinv', 'zeroinventory']
@@ -306,8 +306,8 @@ class EmptyInventory(MagicWord):
 
     def handleWord(self, invoker, avId, toon, *args):
         toon.inventory.zeroInv()
-        toon.d_setInventory()
-        return ("Zeroing inventory for " + toon._name)
+        toon.d_setInventory(toon.inventory.makeNetString())
+        return ("Zeroing inventory for " + toon.getName() + ".")
 
 class MaxJellybeans(MagicWord):
     desc = 'Gives the target full bank of jellybeans and max jellybeans.'
@@ -598,7 +598,36 @@ class Factory(MagicWord):
         from toontown.toonbase import ToontownGlobals
         zoneId = self.air.factoryMgr.createFactory(ToontownGlobals.SellbotFactoryInt, 1 if args[0] > 0 else 0, [avId])
         return "Created factory, teleporting...", avId, ["cogHQLoader", "factoryInterior", "", ToontownGlobals.SellbotHQ, zoneId, 0]
+    
+class ToggleFPS(MagicWord):
+    aliases = ["fps"]
+    desc = "Toggles the display of the FPS meter."
+    execLocation = MagicWordConfig.EXEC_LOC_CLIENT
 
+    def handleWord(self, invoker, avId, toon, *args):
+        base.setFrameRateMeter(not base.frameRateMeter)
+        return "FPS meter toggled."
+
+class ToggleVSync(MagicWord):
+    aliases = ["vsync"]
+    desc = "Toggles vertical sync."
+    execLocation = MagicWordConfig.EXEC_LOC_CLIENT
+
+    def handleWord(self, invoker, avId, toon, *args):
+        return "Not implemented yet."
+        base.toggleVsync()
+        return "Vertical sync toggled."
+class ToggleSkippedMovie(MagicWord):
+    aliases = ["skipmovie"]
+    desc = "Toggles skipping movies for the battle."
+    execLocation = MagicWordConfig.EXEC_LOC_CLIENT
+
+    def handleWord(self, invoker, avId, toon, *args):
+        
+        return "Skipped movie toggled."
+
+
+        
 class BossBattle(MagicWord):
     aliases = ["boss"]
     desc = "Create a new or manupliate the current boss battle."
@@ -756,6 +785,41 @@ class BossBattle(MagicWord):
         boss.requestDelete()
         self.air.deallocateZone(bossZone)
 
+class SetEndlessFloor(MagicWord):
+    # this command sets the current floor in endless to specified number
+    aliases = ["endlessfloor"]
+    desc = "Sets the current floor in endless to specified number."
+    execLocation = MagicWordConfig.EXEC_LOC_SERVER
+    arguments = [("floor", int, True)]
+
+    def handleWord(self, invoker, avId, toon, *args):
+        # check for all distributed ai objects, if it matches a DistributedEndlessSuitInteriorAI , check if the toon is in it
+        # if the toon is in it, set the floor to the specified number
+        # if the toon is not in it, return a message saying that the toon is not in an endless interior
+        #
+        # if there are no DistributedEndlessSuitInteriorAI objects, return a message saying that there are no endless interiors
+        from toontown.building.DistributedEndlessSuitInteriorAI import DistributedEndlessSuitInteriorAI
+        for obj in self.air.doId2do.values():
+            if isinstance(obj, DistributedEndlessSuitInteriorAI):
+                if obj.isToonInInterior(avId):
+                    obj.setNextFloor(args[0])
+                    return f"Set floor to {args[0]}!"
+                else:
+                    return "You are not in an endless interior!"
+
+
+class SetPinkSlips(MagicWord):
+    # this command gives the target toon the specified amount of pink slips
+    # default is 255
+    aliases = ["pinkslips"]
+    desc = "Gives the target toon the specified amount of pink slips."
+    execLocation = MagicWordConfig.EXEC_LOC_SERVER
+    arguments = [("amount", int, False, 255)]
+
+    def handleWord(self, invoker, avId, toon, *args):
+        toon.b_setPinkSlips(args[0])
+        return f"Gave {toon.getName()} {args[0]} pink slips!"
+        
 class Fireworks(MagicWord):
     aliases = ["firework"]
     desc = "Starts a firework show."
