@@ -53,6 +53,8 @@ class DistributedNPCKartClerk(DistributedNPCToonBase):
         return
 
     def resetKartShopClerk(self):
+        if not self.isLocalToon:
+            return
         self.ignoreAll()
         taskMgr.remove(self.uniqueName('popupKartShopGUI'))
         if self.lerpCameraSeq:

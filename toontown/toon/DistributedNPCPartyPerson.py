@@ -86,6 +86,8 @@ class DistributedNPCPartyPerson(DistributedNPCToonBase):
         self.lerpLookAt(Point3(av.getPos(self)), time=0.5)
 
     def resetPartyPerson(self):
+        if not self.isInteractingWithLocalToon:
+            return
         self.ignoreAll()
         taskMgr.remove(self.uniqueName('popupAskGUI'))
         if self.lerpCameraSeq:

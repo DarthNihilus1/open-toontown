@@ -74,6 +74,8 @@ class DistributedNPCFisherman(DistributedNPCToonBase):
         self.lerpLookAt(Point3(av.getPos(self)), time=0.5)
 
     def resetFisherman(self):
+        if not self.isLocalToon:
+            return 
         self.ignoreAll()
         taskMgr.remove(self.uniqueName('popupFishGUI'))
         if self.lerpCameraSeq:

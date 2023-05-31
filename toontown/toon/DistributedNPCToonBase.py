@@ -87,7 +87,9 @@ class DistributedNPCToonBase(DistributedToon.DistributedToon):
         self.accept('enter' + self.cSphereNode.getName(), self.handleCollisionSphereEnter)
 
     def ignoreAvatars(self):
-        self.ignore('enter' + self.cSphereNode.getName())
+        # this is what prevents other toons from talking to npcs lets disable this
+        if not base.config.GetBool('want-client-sided-npcs', True):
+            self.ignore('enter' + self.cSphereNode.getName())
 
     def getCollSphereRadius(self):
         return 3.25
@@ -108,7 +110,7 @@ class DistributedNPCToonBase(DistributedToon.DistributedToon):
         del self.cSphereNodePath
 
     def handleCollisionSphereEnter(self, collEntry):
-        pass
+        self.sendUpdate('avatarEnter', [])
 
     def setupAvatars(self, av):
         self.ignoreAvatars()

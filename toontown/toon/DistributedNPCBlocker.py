@@ -12,7 +12,7 @@ class DistributedNPCBlocker(DistributedNPCToonBase):
     def __init__(self, cr):
         DistributedNPCToonBase.__init__(self, cr)
         self.cSphereNodePath.setScale(4.5, 1.0, 6.0)
-        self.isLocalToon = 1
+        self.isLocalToon = 0
         self.movie = None
         return
 
@@ -42,6 +42,8 @@ class DistributedNPCBlocker(DistributedNPCToonBase):
         self.notify.warning('unexpected exit')
 
     def resetBlocker(self):
+        if not self.isLocalToon:
+            return
         self.cSphereNode.setCollideMask(BitMask32())
         if hasattr(self, 'movie') and self.movie:
             self.movie.cleanup()

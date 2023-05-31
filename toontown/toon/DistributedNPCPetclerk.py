@@ -80,6 +80,8 @@ class DistributedNPCPetclerk(DistributedNPCToonBase):
         return
 
     def resetPetshopClerk(self):
+        if not self.isLocalToon:
+            return
         self.ignoreAll()
         taskMgr.remove(self.uniqueName('popupPetshopGUI'))
         if self.lerpCameraSeq:

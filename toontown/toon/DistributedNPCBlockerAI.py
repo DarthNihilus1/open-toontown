@@ -33,7 +33,7 @@ class DistributedNPCBlockerAI(DistributedNPCToonBaseAI):
         return
 
     def sendStartMovie(self, avId):
-        self.busy = avId
+        self.busy.append(avId)
         self.sendUpdate('setMovie', [NPCToons.BLOCKER_MOVIE_START,
          self.npcId,
          avId,
@@ -42,20 +42,22 @@ class DistributedNPCBlockerAI(DistributedNPCToonBaseAI):
             taskMgr.doMethodLater(NPCToons.CLERK_COUNTDOWN_TIME, self.sendTimeoutMovie, self.uniqueName('clearMovie'))
 
     def sendTimeoutMovie(self, task):
+        avId = self.air.getAvatarIdFromSender()
         self.timedOut = 1
         self.sendUpdate('setMovie', [NPCToons.BLOCKER_MOVIE_TIMEOUT,
          self.npcId,
-         self.busy,
+         avId,
          ClockDelta.globalClockDelta.getRealNetworkTime()])
         self.sendClearMovie(None)
         return Task.done
 
     def sendClearMovie(self, task):
-        self.busy = 0
+        avId = self.air.getAvatarIdFromSender()
+        self.busy.remove(avId)
         self.timedOut = 0
         self.sendUpdate('setMovie', [NPCToons.BLOCKER_MOVIE_CLEAR,
          self.npcId,
-         0,
+         avId,
          ClockDelta.globalClockDelta.getRealNetworkTime()])
         return Task.done
 

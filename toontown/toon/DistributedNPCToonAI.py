@@ -106,13 +106,14 @@ class DistributedNPCToonAI(DistributedNPCToonBaseAI):
         return
 
     def sendTimeoutMovie(self, task):
+        avId = self.air.getAvatarIdFromSender()
         self.pendingAvId = None
         self.pendingQuests = None
         self.pendingTracks = None
         self.pendingTrackQuest = None
         self.sendUpdate('setMovie', [NPCToons.QUEST_MOVIE_TIMEOUT,
          self.npcId,
-         self.busy,
+         avId,
          [],
          ClockDelta.globalClockDelta.getRealNetworkTime()])
         self.sendClearMovie(None)
@@ -120,14 +121,15 @@ class DistributedNPCToonAI(DistributedNPCToonBaseAI):
         return Task.done
 
     def sendClearMovie(self, task):
+        avId = self.air.getAvatarIdFromSender()
         self.pendingAvId = None
         self.pendingQuests = None
         self.pendingTracks = None
         self.pendingTrackQuest = None
-        self.busy = 0
+        self.busy.remove(avId)
         self.sendUpdate('setMovie', [NPCToons.QUEST_MOVIE_CLEAR,
          self.npcId,
-         0,
+         avId,
          [],
          ClockDelta.globalClockDelta.getRealNetworkTime()])
         return Task.done

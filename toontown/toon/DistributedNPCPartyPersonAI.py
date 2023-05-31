@@ -11,7 +11,7 @@ class DistributedNPCPartyPersonAI(DistributedNPCToonBaseAI):
     def __init__(self, air, npcId):
         DistributedNPCToonBaseAI.__init__(self, air, npcId)
         self.givesQuests = 0
-        self.busy = 0
+        self.busy = []
 
     def delete(self):
         taskMgr.remove(self.uniqueName('clearMovie'))
@@ -23,11 +23,11 @@ class DistributedNPCPartyPersonAI(DistributedNPCToonBaseAI):
         if avId not in self.air.doId2do:
             self.notify.warning('Avatar: %s not found' % avId)
             return
-        if self.isBusy():
+        if self.isBusy(avId):
             self.freeAvatar(avId)
             return
         av = self.air.doId2do[avId]
-        self.busy = avId
+        self.busy.append(avId)
         self.acceptOnce(self.air.getAvatarExitEvent(avId), self.__handleUnexpectedExit, extraArgs=[avId])
         parties = av.hostedParties
         if not self.air.partyManager.canBuyParties():
@@ -60,20 +60,22 @@ class DistributedNPCPartyPersonAI(DistributedNPCToonBaseAI):
          ClockDelta.globalClockDelta.getRealNetworkTime()])
 
     def sendTimeoutMovie(self, task):
-        self.d_setMovie(self.busy, NPCToons.PARTY_MOVIE_TIMEOUT)
+        avId = self.air.getAvatarIdFromSender()
+        self.d_setMovie(avId, NPCToons.PARTY_MOVIE_TIMEOUT)
         self.sendClearMovie(None)
         return Task.done
 
     def sendClearMovie(self, task):
-        self.ignore(self.air.getAvatarExitEvent(self.busy))
+        avId = self.air.getAvatarIdFromSender()
+        self.ignore(self.air.getAvatarExitEvent(avId))
         taskMgr.remove(self.uniqueName('clearMovie'))
-        self.busy = 0
-        self.d_setMovie(0, NPCToons.PARTY_MOVIE_CLEAR)
+        self.busy.remove(avId)
+        self.d_setMovie(avId, NPCToons.PARTY_MOVIE_CLEAR)
         return Task.done
 
     def answer(self, wantsToPlan):
         avId = self.air.getAvatarIdFromSender()
-        if self.busy != avId:
+        if avId not in self.busy:
             self.air.writeServerEvent('suspicious', avId, 'DistributedNPCPartyPersonAI.answer busy with %s' % self.busy)
             self.notify.warning('somebody called setMovieDone that I was not busy with! avId: %s' % avId)
             return

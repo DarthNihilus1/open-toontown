@@ -62,6 +62,8 @@ class DistributedNPCClerk(DistributedNPCToonBase):
         return
 
     def resetClerk(self):
+        if not self.isLocalToon:
+            return
         self.ignoreAll()
         taskMgr.remove(self.uniqueName('popupPurchaseGUI'))
         if self.lerpCameraSeq:
