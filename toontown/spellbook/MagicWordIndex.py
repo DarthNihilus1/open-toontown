@@ -288,194 +288,42 @@ class MaxToon(MagicWord):
         toon.b_setCogLevels([ToontownGlobals.MaxCogSuitLevel] * 4)
 
         return f"Successfully maxed {toon.getName()}!"
-
-class RestockInventory(MagicWord):
-    aliases = ['allstuff', 'restockinv', 'maxinv', 'maxinventory', 'restock']
-    desc = 'Gives target all the inventory they can carry.'
+    
+class Inventory(MagicWord):
+    # by default restock the inventory
+    aliases = ['gags', 'inv']
+    desc = 'This allows you to modify your inventory in various ways.'
     execLocation = MagicWordConfig.EXEC_LOC_SERVER
+    arguments = [("command", str, False, ''), ("track", str, False, ""), ("level", int, False, 0), ("amount", int, False, 0)]
+    def handleWord(self, invoker, avId, toon, *args):
+        command = args[0]
+        # the list of words that can be used to restock the inventory
+        restockInvWords = ['restock', 'max', 'all', '', 'fill']
+        # the list of words that can be used to empty the inventory
+        emptyInvWords = ['empty', 'zero', 'null', 'clear', 'none', 'reset']
+        if command in restockInvWords:
+            toon.inventory.maxOutInv()
+            toon.d_setInventory(toon.inventory.makeNetString())
+            return ("Maxing out inventory for " + toon.getName() + ".")
+        if command in emptyInvWords:
+            toon.inventory.zeroInv()
+            toon.d_setInventory(toon.inventory.makeNetString())
+            return ("Zeroing inventory for " + toon.getName() + ".")
+
+            
+    
+class SetPinkSlips(MagicWord):
+    # this command gives the target toon the specified amount of pink slips
+    # default is 255
+    aliases = ["pinkslips", "fires", 'setfires']
+    desc = "Gives the target toon the specified amount of pink slips."
+    execLocation = MagicWordConfig.EXEC_LOC_SERVER
+    arguments = [("amount", int, False, 255)]
 
     def handleWord(self, invoker, avId, toon, *args):
-        toon.inventory.maxOutInv()
-        toon.d_setInventory(toon.inventory.makeNetString())
-        return ("Maxing out inventory for " + toon.getName() + ".")
-
-class EmptyInventory(MagicWord):
-    aliases = ['nostuff', 'emptyinv', 'zeroinv', 'zeroinventory']
-    desc = 'Gives target all the inventory they can carry.'
-    execLocation = MagicWordConfig.EXEC_LOC_SERVER
-
-    def handleWord(self, invoker, avId, toon, *args):
-        toon.inventory.zeroInv()
-        toon.d_setInventory(toon.inventory.makeNetString())
-        return ("Zeroing inventory for " + toon.getName() + ".")
-
-class MaxJellybeans(MagicWord):
-    desc = 'Gives the target full bank of jellybeans and max jellybeans.'
-    aliases = ['maxjbs', 'rich']
-    execLocation = MagicWordConfig.EXEC_LOC_SERVER
-
-    def handleWord(self, invoker, avId, toon, *args):
-        av = toon
-        av.b_setMoney(toon.maxMoney)
-        av.b_setBankMoney(toon.maxBankMoney)
-        return (toon._name + " is now rich")
-
-class NoJellyBeans(MagicWord):
-    desc = 'Gives the target no jellybeans.'
-    aliases = ['nojbs', 'poor']
-    execLocation = MagicWordConfig.EXEC_LOC_SERVER
-
-    def handleWord(self, invoker, avId, av, *args):
-        av.b_setMoney(0)
-        av.b_setBankMoney(0)
-        return (av._name + " is now poor")
-
-class SetMoney(MagicWord):
-    desc = "Sets the target's carrying jellybeans."
-    advancedDesc = "Sets the target's carrying jellybeans. If no args are given give max amount."
-    aliases = ['setjellybeans', 'jellybeans', 'setjbs',  'jelly']
-    arguments = [('money', int, False, 250)]
-    execLocation = MagicWordConfig.EXEC_LOC_SERVER
-
-    def handleWord(self, invoker, avId, toon, *args):
-        if len(args) >= 1:
-            count = int(args[0])
-            # this will just fill up the pocketbook,
-            # but wont add to the bank
-            toon.b_setMoney(min(count, toon.getMaxMoney()))
-        else:
-            toon.b_setMoney(toon.getMaxMoney())
-        return f'Set money to {toon.getMoney()}.'
-
-
-class SetBankMoney(MagicWord):
-    desc = "Sets the target's current amount of jellybeans in the bank."
-    advancedDesc = "Sets the target's current amount of jellybeans in the bank. If no args are given give max amount."
-    aliases = ['setbank', 'bank', 'bankmoney', ]
-    arguments = [('money', int, False, 30000)]
-    execLocation = MagicWordConfig.EXEC_LOC_SERVER
-
-    def handleWord(self, invoker, avId, toon, *args):
-        if len(args) >= 1:
-            count = int(args[0])
-            toon.b_setBankMoney(count)
-        else:
-            toon.b_setBankMoney(toon.getMaxBankMoney())
-        return f'Set bank money to {toon.getBankMoney()}'
-
-class SetMaxBankMoney(MagicWord):
-    desc = "Sets the target's max amount of jellybeans in the bank."
-    advancedDesc = "Sets the target's max amount of jellybeans in the bank."
-    aliases = ['setmaxbank', 'maxbank', 'maxbankmoney', ]
-    arguments = [('money', int, True)]
-    execLocation = MagicWordConfig.EXEC_LOC_SERVER
-    def handleWord(self, invoker, avId, toon, *args):
-
-        if len(args) >= 1:
-            count = int(args[0])
-            toon.b_setMaxBankMoney(count)
-            response = f"Max bank money set to {count}" 
-
-        else:
-            response = f"Max bank money is {toon.getMaxBankMoney()}"
-        return response
-
-class GivePies(MagicWord):
-    desc = 'Gives the target the specified pie type.'
-    aliases = ['pie', 'pies', 'givepie']
-    arguments = [('type', str, True)]
-    execLocation = MagicWordConfig.EXEC_LOC_SERVER
-
-    def handleWord(self, invoker, avId, toon, *args):
-        # Give ourselves a pie.  Or four.
-        count = 0
-        _type = None
-        if len(args) == 1:
-            count = 1
-        for arg in args[1:]:
-            if arg in ToontownBattleGlobals.pieNames:
-                _type = ToontownBattleGlobals.pieNames.index(arg)
-            else:
-                try:
-                    count = int(arg)
-                except BaseException:
-                    response = "Invalid pie argument: %s" % (arg)
-
-        if _type is not None:
-            toon.b_setPieType(_type)
-        toon.b_setNumPies(toon.numPies + count)
-        response = f'Set pies to {toon.getPieType()} with num of {toon.getNumPies()}'
-        return response
-
-class SetExp(MagicWord):
-    aliases = ['exp', 'experience', 'setexperience']
-    desc = 'Sets the experience of the target.'
-    advancedDesc = "Sets the experience of the target. If no args are specified set all tracks to next level."
-    execLocation = MagicWordConfig.EXEC_LOC_SERVER
-    arguments = [('track', str, False, 'all'), ('increment', int, False, -1)]
-
-    def handleWord(self, invoker, avId, av, *args):
-        track = None
-        trackIndex = -1
-        increment = 0
-        gotIncrement = 0
-
-        if len(args) > 0:
-            trackStr = args[0]
-            if trackStr != "all":
-                trackIndex = ToontownBattleGlobals.Tracks.index(trackStr)
-
-        if len(args) > 1:
-            increment = int(args[1])
-            if increment == -1:
-                gotIncrement = 0
-            else:
-                gotIncrement = 1
-
-        if trackIndex == -1:
-            for trackIndex in range(ToontownBattleGlobals.MAX_TRACK_INDEX + 1):
-                if av.hasTrackAccess(trackIndex):
-                    if not gotIncrement:
-                        # No increment specified; the default is whatever
-                        # it takes to get to the next track.
-                        increment = av.experience.getNextExpValue(trackIndex) - av.experience.getExp(trackIndex)
-
-                    response = ("Adding %d to %s track for %s." % (
-                        increment, ToontownBattleGlobals.Tracks[trackIndex], av._name))
-                    av.experience.addExp(trackIndex, increment)
-        else:
-            if not gotIncrement:
-                # No increment specified; the default is whatever
-                # it takes to get to the next track.
-                increment = av.experience.getNextExpValue(trackIndex) - av.experience.getExp(trackIndex)
-
-            response = ("Adding %d to %s track for %s." % (
-                increment, ToontownBattleGlobals.Tracks[trackIndex], av._name))
-            av.experience.addExp(trackIndex, increment)
-
-        av.d_setExperience(av.experience.makeNetString())
-        return response
-class SetTrophyScore(MagicWord):
-    aliases = ['trophy', 'settrophy']
-    desc = 'Sets the trophy score of the target.'
-    advancedDesc = 'Set the trophy score of the target. If no args specified, restore the actual trophy score.'
-    execLocation = MagicWordConfig.EXEC_LOC_SERVER
-    arguments = [('score', int, False, -1)]
-
-    def handleWord(self, invoker, avId, toon, *args):
-        if args[0] != -1:
-            score = int(args[0])
-
-            response = "Set trophy score to %s." % (score)
-        else:
-            # No score specified; restore the actual trophy score.
-            score = self.air.trophyMgr.getTrophyScore(avId)
-
-            response = "Trophy score is %s." % (score)
-
-        toon.d_setTrophyScore(score)
-        return response       
- 
+        toon.b_setPinkSlips(args[0])
+        return f"Gave {toon.getName()} {args[0]} pink slips!" 
+    
 class AbortMinigame(MagicWord):
     aliases = ["exitgame", "exitminigame", "quitgame", "quitminigame", "skipgame", "skipminigame"]
     desc = "Aborts an ongoing minigame."
