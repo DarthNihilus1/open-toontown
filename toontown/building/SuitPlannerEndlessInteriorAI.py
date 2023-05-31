@@ -175,21 +175,7 @@ class SuitPlannerEndlessInteriorAI(SuitPlannerInteriorAI.SuitPlannerInteriorAI):
             return [5, 6,
                     # a typical level with a higher level boss (must be at end)
                     7, 10]
-        # make this range based on the floor number
-        # low floors should have low level suits, low amount of suits, 
-        # higher floors should have higher level suits, higher amount of suits
-        # make a formula based on this:
-        # 1-10: 1-5 suits, 1-6 levels
-        # 11-20: 1-10 suits, 2-12 levels
-        # 21-30: 2-20 suits, 4-24 levels
-        # etc 
-        lvlPoolRange = [currFloor + 5, currFloor + 10]
-        if currFloor > 20:
-            lvlPoolRange = [(currFloor + 5) * 2 , (currFloor + 10) * 2]
-        elif currFloor > 10:
-            lvlPoolRange = [(currFloor + 5) , (currFloor + 10)]
-        elif currFloor <= 10:
-            lvlPoolRange = [(currFloor + 5) / 2, (currFloor + 10) / 2]
+        lvlPoolRange = [round(currFloor ** 2 / 30 + currFloor / 2 + 5), round(currFloor ** 2 / 20 + currFloor / 2 + 7)]
         
         #maxFloors =  bldgInfo[ SuitBuildingGlobals.SUIT_BLDG_INFO_FLOORS ][1]
 
@@ -214,21 +200,8 @@ class SuitPlannerEndlessInteriorAI(SuitPlannerInteriorAI.SuitPlannerInteriorAI):
         # for this level of building
         #
         if currFloor >= 1:
-            if currFloor >= 40:
-                lvlMin = round(currFloor / 1.2)
-                lvlMax = round(currFloor / 1.1)
-            if currFloor >= 30:
-                lvlMin = round(currFloor / 1.5)
-                lvlMax = round(currFloor / 1.2)
-            elif currFloor >= 20:
-                lvlMin = round(currFloor / 2)
-                lvlMax = round(currFloor / 1.5)
-            elif currFloor >= 10:
-                lvlMin = round(currFloor / 3)
-                lvlMax = round(currFloor / 1.5)
-            elif currFloor < 10:
-                lvlMin = round(currFloor / 3)
-                lvlMax = round(currFloor)
+            lvlMin = round(0.1 * currFloor ** 1.5)
+            lvlMax = round(0.125 * currFloor ** 1.5 + 3)
             
         else:
             lvlMin = 1

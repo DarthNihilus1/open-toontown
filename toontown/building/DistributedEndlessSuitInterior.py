@@ -256,8 +256,6 @@ class DistributedEndlessSuitInterior(DistributedObject.DistributedObject):
 
         # Position the suits
         for index in range(len(self.suits)):
-            assert (self.notify.debug('setting suit: %d to pos: %s' % \
-                                      (self.suits[index].doId, SuitPositions[index])))
             self.suits[index].setPos(SuitPositions[index])
             if len(self.suits) > 2:
                 self.suits[index].setH(SuitHs[index])
