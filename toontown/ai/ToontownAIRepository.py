@@ -19,6 +19,7 @@ from toontown.coghq.PromotionManagerAI import PromotionManagerAI
 from toontown.distributed.ToontownDistrictAI import ToontownDistrictAI
 from toontown.distributed.ToontownDistrictStatsAI import ToontownDistrictStatsAI
 from toontown.distributed.ToontownInternalRepository import ToontownInternalRepository
+from toontown.estate.EstateManagerAI import EstateManagerAI
 from toontown.hood import ZoneUtil
 from toontown.hood.BRHoodDataAI import BRHoodDataAI
 from toontown.hood.BossbotHQDataAI import BossbotHQDataAI
@@ -100,6 +101,7 @@ class ToontownAIRepository(ToontownInternalRepository):
         self.hoods = []
         self.buildingManagers = {}
         self.suitPlanners = {}
+
 
     def handleConnected(self):
         ToontownInternalRepository.handleConnected(self)
@@ -208,6 +210,10 @@ class ToontownAIRepository(ToontownInternalRepository):
         self.inGameNewsMgr = DistributedInGameNewsMgrAI(self)
         self.inGameNewsMgr.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
 
+        # Generate our estate manager...
+        self.estateMgr = EstateManagerAI(self)
+        self.estateMgr.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
+
         # Generate our catalog manager...
         self.catalogManager = CatalogManagerAI(self)
         self.catalogManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
@@ -231,6 +237,7 @@ class ToontownAIRepository(ToontownInternalRepository):
         # Generate our party manager...
         self.partyManager = DistributedPartyManagerAI(self)
         self.partyManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
+        
 
     def generateHood(self, hoodConstructor, zoneId):
         # Bossbot HQ doesn't use DNA, so we skip over that.
@@ -379,7 +386,14 @@ class ToontownAIRepository(ToontownInternalRepository):
 
     def loadDNAFileAI(self, dnaStore, dnaFileName):
         return loadDNAFileAI(dnaStore, dnaFileName)
-
+    
+    #AIGEOM
+    def loadDNAFile(self, dnaStore, dnaFile, cs=CSDefault):
+        """
+        load everything, including geometry
+        """
+        return loadDNAFile(dnaStore, dnaFile, cs)
+    
     def findFishingPonds(self, dnaData, zoneId, area):
         fishingPonds, fishingPondGroups = [], []
 
@@ -506,3 +520,4 @@ class ToontownAIRepository(ToontownInternalRepository):
     def setupFiles(self):
         if not os.path.exists(self.dataFolder):
             os.mkdir(self.dataFolder)
+
