@@ -49,3 +49,4 @@ class ToontownUDRepository(ToontownInternalRepository):
 
             # Create our Toontown friends manager... (Astron specific)
             self.toontownFriendsManager = self.generateGlobalObject(OTP_DO_ID_TOONTOWN_FRIENDS_MANAGER, 'ToontownFriendsManager')
+        self.chatHandler = self.generateGlobalObject(OTP_DO_ID_CHAT_HANDLER, 'ChatHandler')
