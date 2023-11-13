@@ -28,6 +28,8 @@ from toontown.makeatoon import NameGenerator
 from otp.otpbase import OTPGlobals
 from toontown.battle import BattleParticles
 from toontown.minigame import PhotoGameBase
+from panda3d.otp import *
+
 WORLD_SCALE = 2.0
 FAR_PLANE_DIST = 600 * WORLD_SCALE
 STAGE_Z_OFFSET = 7.0
@@ -243,6 +245,11 @@ class DistributedPhotoGame(DistributedMinigame, PhotoGameBase.PhotoGameBase):
         self.removeChildGameFSM(self.gameFSM)
         del self.gameFSM
         self.ignoreAll()
+
+        for rayEntry in self.rayArray:
+            rayEntry[3].remove_node()
+        del self.rayArray
+
         return
 
     def onstage(self):
