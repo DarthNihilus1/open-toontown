@@ -1,8 +1,6 @@
 from panda3d.core import *
 from toontown.toon import Toon
 from toontown.hood import Place
-from toontown.hood import ZoneUtil
-from toontown.toonbase import ToontownGlobals
 
 class BattlePlace(Place.Place):
 
@@ -96,30 +94,7 @@ class BattlePlace(Place.Place):
     def doEnterZone(self, newZoneId):
         if newZoneId != self.zoneId:
             if newZoneId != None:
-                if __astron__:
-                    # NOTE: This gets generated during the Quiet Zone transition.
-                    # See: toontown/hood/QuietZoneState.py (getCogHQViszones)
-                    visList = base.cr.playGame.getPlace().loader.zoneVisDict[newZoneId]
-
-                    if newZoneId not in visList:
-                        visList.append(newZoneId)
-                    if ZoneUtil.getBranchZone(newZoneId) not in visList:
-                        visList.append(ZoneUtil.getBranchZone(newZoneId))
-
-                    base.cr.sendSetZoneMsg(newZoneId, visList)
-                else:
-                    base.cr.sendSetZoneMsg(newZoneId)
+                base.cr.sendSetZoneMsg(newZoneId)
                 self.notify.debug('Entering Zone %d' % newZoneId)
             self.zoneId = newZoneId
         return
-
-    if __astron__:
-        def genDNAFileName(self, zoneId):
-            zoneId = ZoneUtil.getCanonicalZoneId(zoneId)
-            hoodId = ZoneUtil.getCanonicalHoodId(zoneId)
-            hood = ToontownGlobals.dnaMap[hoodId]
-            phase = ToontownGlobals.streetPhaseMap[hoodId]
-            if hoodId == zoneId:
-                zoneId = 'sz'
-
-            return 'phase_%s/dna/%s_%s.dna' % (phase, hood, zoneId)

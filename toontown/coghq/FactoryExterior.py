@@ -4,11 +4,8 @@ from direct.fsm import ClassicFSM, State
 from direct.fsm import State
 from otp.distributed.TelemetryLimiter import RotationLimitToH, TLGatherAllAvs
 from toontown.toonbase import ToontownGlobals
-from toontown.hood import ZoneUtil
 from toontown.building import Elevator
-from panda3d.core import *
-from panda3d.otp import *
-from panda3d.toontown import *
+from pandac.PandaModules import *
 
 class FactoryExterior(BattlePlace.BattlePlace):
     notify = DirectNotifyGlobal.directNotify.newCategory('FactoryExterior')
