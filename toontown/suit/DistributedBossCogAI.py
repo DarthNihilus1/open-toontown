@@ -390,6 +390,8 @@ class DistributedBossCogAI(DistributedAvatarAI.DistributedAvatarAI):
             self.sendToonIds()
 
     def divideToons(self):
+        # Divide the toons randomly into toonsA and toonsB for facing
+        # off with the boss cog.
         if self.nerfed:
             splitMethod = self.__balancedDivide
         else:
@@ -398,17 +400,51 @@ class DistributedBossCogAI(DistributedAvatarAI.DistributedAvatarAI):
         self.looseToons += loose
         self.sendToonIds()
 
-    def __randomDivide(self):
+    def getFriendlyToons(self):
+        # Returns a dict of toons that are friends with each other
+        # This is used to put toons on the same side of the battle
+        # if they are friends with each other
         toons = self.involvedToons[:]
-        random.shuffle(toons)
-        numToons = min(len(toons), 8)
-        if numToons < 4:
-            numToonsB = numToons // 2
+        friendlyToons = {}
+        for toonId in toons:
+            toon = self.air.doId2do.get(toonId)
+            if toon:
+                friends = toon.getFriends()
+                for friendId in friends:
+                    if friendId in toons:
+                        if toonId not in friendlyToons:
+                            friendlyToons[toonId] = []
+                        friendlyToons[toonId].append(friendId)
+    
+    def __randomDivide(self):
+        # lets do a function to check if some of the toons are friends with each other 
+        # if they are , prioritize them to be on the same side, (for ex 2 friends and 2 randoms, 4 friends 0 randoms)
+        toons = self.involvedToons[:]
+        friendlyToons = self.getFriendlyToons()
+        if friendlyToons:
+            teamA = []
+            teamB = []
+            loose = []
+            for toonId in toons:
+                if toonId in friendlyToons[toons[0]]:
+                    if len(teamA) < 4:
+                        teamA.append(toonId)
+                    else:
+                        teamB.append(toonId)
+
+      
         else:
-            numToonsB = (numToons + random.choice([0, 1])) // 2
-        teamA = toons[numToonsB:numToons]
-        teamB = toons[:numToonsB]
-        loose = toons[numToons:]
+                
+            random.shuffle(toons)
+            numToons = min(len(toons), 8)
+            #if number of toons is less than or equal to 4 than put them on the same side
+            if numToons <= 4:
+                numToonsB = numToons 
+            else:
+                numToonsB = (numToons + random.choice([0, 1])) // 2
+            teamA = toons[numToonsB:numToons]
+            teamB = toons[:numToonsB]
+            loose = toons[numToons:]
         return (
          teamA, teamB, loose)
 
