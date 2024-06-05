@@ -304,6 +304,18 @@ class Inventory(MagicWord):
             toon.d_setInventory(toon.inventory.makeNetString())
             return ("Zeroing inventory for " + toon.getName() + ".")
 
+            
+class ToggleFps(MagicWord):
+    # this command toggles the fps meter
+    aliases = ["fps"]
+    desc = "Toggles the FPS meter."
+    execLocation = MagicWordConfig.EXEC_LOC_CLIENT
+
+    def handleWord(self, invoker, avId, toon, *args):
+        base.setFrameRateMeter(not base.frameRateMeter)
+        return f"Toggled FPS meter.: {not base.frameRateMeter}"
+
+
 class SetPinkSlips(MagicWord):
     # this command gives the target toon the specified amount of pink slips
     # default is 255

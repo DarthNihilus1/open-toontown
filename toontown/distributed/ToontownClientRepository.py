@@ -63,7 +63,6 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         self.toons = {}
         if self.http.getVerifySsl() != HTTPClient.VSNoVerify:
             self.http.setVerifySsl(HTTPClient.VSNoDateCheck)
-        #prepareAvatar(self.http)
         self.__forbidCheesyEffects = 0
         self.friendManager = None
         self.speedchatRelay = None
@@ -82,6 +81,7 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         self.toontownTimeManager = ToontownTimeManager.ToontownTimeManager()
         self.avatarFriendsManager = self.generateGlobalObject(OtpDoGlobals.OTP_DO_ID_AVATAR_FRIENDS_MANAGER, 'AvatarFriendsManager')
         self.playerFriendsManager = self.generateGlobalObject(OtpDoGlobals.OTP_DO_ID_PLAYER_FRIENDS_MANAGER, 'TTPlayerFriendsManager')
+        self.toontownFriendsManager = self.generateGlobalObject(OtpDoGlobals.OTP_DO_ID_TOONTOWN_FRIENDS_MANAGER, 'ToontownFriendsManager')
         self.speedchatRelay = self.generateGlobalObject(OtpDoGlobals.OTP_DO_ID_TOONTOWN_SPEEDCHAT_RELAY, 'TTSpeedchatRelay')
         self.deliveryManager = self.generateGlobalObject(OtpDoGlobals.OTP_DO_ID_TOONTOWN_DELIVERY_MANAGER, 'DistributedDeliveryManager')
         if ConfigVariableBool('want-code-redemption', 1).value:
@@ -119,17 +119,16 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
                 for head in ToonDNA.getHeadList(species):
                     for torso in ToonDNA.toonTorsoTypes:
                         for legs in ToonDNA.toonLegTypes:
-                            for gender in ('m', 'f'):
-                                print('species: %s, head: %s, torso: %s, legs: %s, gender: %s' % (species,
+                                print('species: %s, head: %s, torso: %s, legs: %s' % (species,
                                  head,
                                  torso,
                                  legs,
-                                 gender))
+                                 ))
                                 dna = ToonDNA.ToonDNA()
                                 dna.newToon((head,
                                  torso,
-                                 legs,
-                                 gender))
+                                 legs
+                                 ))
                                 toon = Toon.Toon()
                                 try:
                                     toon.setDNA(dna)
@@ -423,11 +422,14 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
             pad.delayDelete.destroy()
 
     def __sendGetAvatarDetails(self, avId):
-        datagram = PyDatagram()
-        avatar = self.__queryAvatarMap[avId].avatar
-        datagram.addUint16(avatar.getRequestID())
-        datagram.addUint32(avId)
-        self.send(datagram)
+        if __astron__:
+            self.toontownFriendsManager.sendGetAvatarDetailsRequest(avId)
+        else:
+            datagram = PyDatagram()
+            avatar = self.__queryAvatarMap[avId].avatar
+            datagram.addUint16(avatar.getRequestID())
+            datagram.addUint32(avId)
+            self.send(datagram)
 
     def handleGetAvatarDetailsResp(self, di):
         avId = di.getUint32()
@@ -834,11 +836,14 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         return 1
 
     def removeFriend(self, avatarId):
-        base.localAvatar.sendUpdate('friendsNotify', [base.localAvatar.doId, 1], sendToId=avatarId)
-        datagram = PyDatagram()
-        datagram.addUint16(CLIENT_REMOVE_FRIEND)
-        datagram.addUint32(avatarId)
-        self.send(datagram)
+        if __astron__:
+            self.toontownFriendsManager.sendRemoveFriend(avatarId)
+        else:
+            base.localAvatar.sendUpdate('friendsNotify', [base.localAvatar.doId, 1], sendToId=avatarId)
+            datagram = PyDatagram()
+            datagram.addUint16(CLIENT_REMOVE_FRIEND)
+            datagram.addUint32(avatarId)
+            self.send(datagram)
         self.estateMgr.removeFriend(base.localAvatar.doId, avatarId)
         for pair in base.localAvatar.friendsList:
             friendId = pair[0]
@@ -853,11 +858,11 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         self.friendsListError = 0
 
     def sendGetFriendsListRequest(self):
+        self.friendsMapPending = 1
+        self.friendsListError = 0
         if __astron__:
-            print('sendGetFriendsListRequest TODO')
+            self.toontownFriendsManager.sendGetFriendsListRequest()
         else:
-            self.friendsMapPending = 1
-            self.friendsListError = 0
             datagram = PyDatagram()
             datagram.addUint16(CLIENT_GET_FRIEND_LIST)
             self.send(datagram)
@@ -895,6 +900,7 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
 
     def handleGetFriendsList(self, di):
         error = di.getUint8()
+        friends = []
         if error:
             self.notify.warning('Got error return from friends list.')
             self.friendsListError = 1
@@ -904,25 +910,30 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
                 doId = di.getUint32()
                 name = di.getString()
                 dnaString = di.getBlob()
-                dna = ToonDNA.ToonDNA()
-                dna.makeFromNetString(dnaString)
                 petId = di.getUint32()
-                handle = FriendHandle.FriendHandle(doId, name, dna, petId)
-                self.friendsMap[doId] = handle
-                if doId in self.friendsOnline:
-                    self.friendsOnline[doId] = handle
-                if doId in self.friendPendingChatSettings:
-                    self.notify.debug('calling setCommonAndWL %s' % str(self.friendPendingChatSettings[doId]))
-                    handle.setCommonAndWhitelistChatFlags(*self.friendPendingChatSettings[doId])
 
-            if base.wantPets and base.localAvatar.hasPet():
+                friends.append((doId, name, dnaString, petId))
+        self.setFriendsMap(friends)
 
-                def handleAddedPet():
-                    self.friendsMapPending = 0
-                    messenger.send('friendsMapComplete')
+    def setFriendsMap(self, friends):
+        for doId, name, dnaString, petId in friends:
+            dna = ToonDNA.ToonDNA()
+            dna.makeFromNetString(dnaString)
+            handle = FriendHandle.FriendHandle(doId, name, dna, petId)
+            self.friendsMap[doId] = handle
+            if doId in self.friendsOnline:
+                self.friendsOnline[doId] = handle
+            if doId in self.friendPendingChatSettings:
+                self.notify.debug('calling setCommonAndWL %s' % str(self.friendPendingChatSettings[doId]))
+                handle.setCommonAndWhitelistChatFlags(*self.friendPendingChatSettings[doId])
 
-                self.addPetToFriendsMap(handleAddedPet)
-                return
+        if base.wantPets and base.localAvatar.hasPet():
+            def handleAddedPet():
+                self.friendsMapPending = 0
+                messenger.send('friendsMapComplete')
+            self.addPetToFriendsMap(handleAddedPet)
+            return
+
         self.friendsMapPending = 0
         messenger.send('friendsMapComplete')
 
@@ -961,6 +972,9 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
             commonChatFlags = di.getUint8()
         if di.getRemainingSize() > 0:
             whitelistChatFlags = di.getUint8()
+        self.setFriendOnline(doId, commonChatFlags, whitelistChatFlags)
+    
+    def setFriendOnline(self, doId, commonChatFlags, whitelistChatFlags):
         self.notify.debug('Friend %d now online. common=%d whitelist=%d' % (doId, commonChatFlags, whitelistChatFlags))
         if doId not in self.friendsOnline:
             self.friendsOnline[doId] = self.identifyFriend(doId)
@@ -970,6 +984,9 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
 
     def handleFriendOffline(self, di):
         doId = di.getUint32()
+        self.setFriendOffline(doId)
+    
+    def setFriendOffline(self, doId):
         self.notify.debug('Friend %d now offline.' % doId)
         try:
             del self.friendsOnline[doId]

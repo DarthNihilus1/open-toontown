@@ -18,7 +18,6 @@ from .MakeAToonGlobals import *
 from direct.interval.IntervalGlobal import *
 from direct.directnotify import DirectNotifyGlobal
 from toontown.toontowngui import TTDialog
-from . import GenderShop
 from . import BodyShop
 from . import ColorShop
 from . import MakeClothesGUI
@@ -53,24 +52,22 @@ class MakeAToon(StateData.StateData):
                 self.namelessPotAv = av
             self.nameList.append(av.name)
 
-        self.fsm = ClassicFSM.ClassicFSM('MakeAToon', [State.State('Init', self.enterInit, self.exitInit, ['GenderShop', 'NameShop']),
-         State.State('GenderShop', self.enterGenderShop, self.exitGenderShop, ['BodyShop']),
-         State.State('BodyShop', self.enterBodyShop, self.exitBodyShop, ['GenderShop', 'ColorShop']),
+        self.fsm = ClassicFSM.ClassicFSM('MakeAToon', [State.State('Init', self.enterInit, self.exitInit, ['BodyShop', 'NameShop']),
+         State.State('BodyShop', self.enterBodyShop, self.exitBodyShop, ['ColorShop']),
          State.State('ColorShop', self.enterColorShop, self.exitColorShop, ['BodyShop', 'ClothesShop']),
          State.State('ClothesShop', self.enterClothesShop, self.exitClothesShop, ['ColorShop', 'NameShop']),
          State.State('NameShop', self.enterNameShop, self.exitNameShop, ['ClothesShop']),
          State.State('Done', self.enterDone, self.exitDone, [])], 'Init', 'Done')
         self.parentFSM = parentFSM
         self.parentFSM.getStateNamed('createAvatar').addChild(self.fsm)
-        self.gs = GenderShop.GenderShop(self, 'GenderShop-done')
         self.bs = BodyShop.BodyShop('BodyShop-done')
         self.cos = ColorShop.ColorShop('ColorShop-done')
         self.cls = MakeClothesGUI.MakeClothesGUI('ClothesShop-done')
         self.ns = NameShop.NameShop(self, 'NameShop-done', avList, index, self.isPaid)
-        self.shop = GENDERSHOP
+        self.shop = BODYSHOP
         self.shopsVisited = []
         if self.warp:
-            self.shopsVisited = [GENDERSHOP,
+            self.shopsVisited = [
              BODYSHOP,
              COLORSHOP,
              CLOTHESSHOP]
@@ -98,10 +95,6 @@ class MakeAToon(StateData.StateData):
         base.playMusic(self.music, looping=1, volume=self.musicVolume)
         camera.setPosHpr(-5.7, -12.3501, 2.15, -24.8499, 2.73, 0)
         if self.warp:
-            if self.toon.style.torso[1] == 's':
-                self.toon.gender = 's'
-            else:
-                self.toon.gender = 'd'
             self.toon.reparentTo(render)
             self.toon.loop('neutral')
             self.toon.setPosHpr(-4.1, -2, 0, 200, 0, 0)
@@ -113,7 +106,7 @@ class MakeAToon(StateData.StateData):
             self.guiLastButton.hide()
             self.fsm.request('NameShop')
         else:
-            self.fsm.request('GenderShop')
+            self.fsm.request('BodyShop')
 
     def exit(self):
         base.camLens.setFov(ToontownGlobals.DefaultCameraFov)
@@ -206,8 +199,6 @@ class MakeAToon(StateData.StateData):
         ee.bind(DGG.B1PRESS, lambda x, ee = ee: self.toggleSlide())
         self.eee = ee
         self.room = loader.loadModel('phase_3/models/makeatoon/tt_m_ara_mat_room')
-        self.genderWalls = self.room.find('**/genderWalls')
-        self.genderProps = self.room.find('**/genderProps')
         self.bodyWalls = self.room.find('**/bodyWalls')
         self.bodyProps = self.room.find('**/bodyProps')
         self.colorWalls = self.room.find('**/colorWalls')
@@ -246,7 +237,6 @@ class MakeAToon(StateData.StateData):
             self.toon.setNameVisible(0)
             self.toon.startBlink()
             self.toon.startLookAround()
-        self.gs.load()
         self.bs.load()
         self.cos.load()
         self.cls.load()
@@ -268,12 +258,10 @@ class MakeAToon(StateData.StateData):
         if self.toon:
             self.toon.stopBlink()
             self.toon.stopLookAroundNow()
-        self.gs.unload()
         self.bs.unload()
         self.cos.unload()
         self.cls.unload()
         self.ns.unload()
-        del self.gs
         del self.bs
         del self.cos
         del self.cls
@@ -312,10 +300,6 @@ class MakeAToon(StateData.StateData):
         self.cleanupFocusOutIval()
         self.room.removeNode()
         del self.room
-        self.genderWalls.removeNode()
-        self.genderProps.removeNode()
-        del self.genderWalls
-        del self.genderProps
         self.bodyWalls.removeNode()
         self.bodyProps.removeNode()
         del self.bodyWalls
@@ -377,9 +361,7 @@ class MakeAToon(StateData.StateData):
 
     def goToNextShop(self):
         self.progressing = 1
-        if self.shop == GENDERSHOP:
-            self.fsm.request('BodyShop')
-        elif self.shop == BODYSHOP:
+        if self.shop == BODYSHOP:
             self.fsm.request('ColorShop')
         elif self.shop == COLORSHOP:
             self.fsm.request('ClothesShop')
@@ -388,9 +370,7 @@ class MakeAToon(StateData.StateData):
 
     def goToLastShop(self):
         self.progressing = 0
-        if self.shop == BODYSHOP:
-            self.fsm.request('GenderShop')
-        elif self.shop == COLORSHOP:
+        if self.shop == COLORSHOP:
             self.fsm.request('BodyShop')
         elif self.shop == CLOTHESSHOP:
             self.fsm.request('ColorShop')
@@ -408,59 +388,62 @@ class MakeAToon(StateData.StateData):
     def exitInit(self):
         pass
 
-    def enterGenderShop(self):
-        base.cr.centralLogger.writeClientEvent('MAT - enteringGenderShop')
-        self.shop = GENDERSHOP
-        if GENDERSHOP not in self.shopsVisited:
-            self.shopsVisited.append(GENDERSHOP)
-            self.genderWalls.reparentTo(self.squishJoint)
-            self.genderProps.reparentTo(self.propJoint)
-            self.roomSquishActor.pose('squish', 0)
-            self.guiNextButton['state'] = DGG.DISABLED
-        else:
-            self.dropRoom(self.genderWalls, self.genderProps)
-        self.guiTopBar['text'] = TTLocalizer.CreateYourToonTitle
-        self.guiTopBar['text_fg'] = (1, 0.92, 0.2, 1)
-        self.guiTopBar['text_scale'] = TTLocalizer.MATenterGenderShop
-        base.transitions.fadeIn()
-        self.accept('GenderShop-done', self.__handleGenderShopDone)
-        self.gs.enter()
-        self.guiNextButton.show()
-        self.gs.showButtons()
-        self.rotateLeftButton.hide()
-        self.rotateRightButton.hide()
+  
 
-    def exitGenderShop(self):
-        self.squishRoom(self.genderWalls)
-        self.squishProp(self.genderProps)
-        self.gs.exit()
-        self.ignore('GenderShop-done')
 
-    def __handleGenderShopDone(self):
-        self.guiNextButton.hide()
-        self.gs.hideButtons()
-        self.goToNextShop()
 
     def bodyShopOpening(self):
         self.bs.showButtons()
         self.guiNextButton.show()
-        self.guiLastButton.show()
         self.rotateLeftButton.show()
         self.rotateRightButton.show()
 
+
+
     def enterBodyShop(self):
+        if hasattr(self, 'toon'):
+            if self.toon:
+                self.toon.show()
+             
+            else:
+                self.dna = ToonDNA.ToonDNA()
+                # stage = 1 is MAKE_A_TOON
+                self.dna.newToonRandom(eyelashes=random.randint(0, 1), stage=1)
+
+                self.toon = Toon.Toon()
+                self.toon.setDNA(self.dna)
+                # make sure the avatar uses its highest LOD
+                self.toon.useLOD(1000)
+                # make sure his name doesn't show up
+                self.toon.setNameVisible(0)
+                self.toon.startBlink()
+                self.toon.startLookAround()
+                self.toon.reparentTo(render)
+                self.toon.setPos(self.toonPosition)
+                self.toon.setHpr(self.toonHpr)
+                self.toon.setScale(self.toonScale)
+                self.toon.loop("neutral")
+                self.setNextButtonState(DGG.NORMAL)
+                self.setToon(self.toon)
+                messenger.send("MAT-newToonCreated")
         base.cr.centralLogger.writeClientEvent('MAT - enteringBodyShop')
-        self.toon.show()
+        if self.toon:
+            self.toon.show()
         self.shop = BODYSHOP
         self.guiTopBar['text'] = TTLocalizer.ShapeYourToonTitle
         self.guiTopBar['text_fg'] = (0.0, 0.98, 0.5, 1)
         self.guiTopBar['text_scale'] = TTLocalizer.MATenterBodyShop
-        self.accept('BodyShop-done', self.__handleBodyShopDone)
+        self.accept("BodyShop-done", self.__handleBodyShopDone)
         self.dropRoom(self.bodyWalls, self.bodyProps)
+
+        # we need to do this first for setup...
         self.bs.enter(self.toon, self.shopsVisited)
-        if BODYSHOP not in self.shopsVisited:
+
+        if (BODYSHOP not in self.shopsVisited):
             self.shopsVisited.append(BODYSHOP)
+
         self.bodyShopOpening()
+
 
     def exitBodyShop(self):
         self.squishRoom(self.bodyWalls)

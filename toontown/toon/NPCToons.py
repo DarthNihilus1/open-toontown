@@ -63,9 +63,10 @@ TAILOR_COUNTDOWN_TIME = 300
 RTDNAFile = '/RTDNAFile.txt'
 saveDNA = False
 
-def getRandomDNA(seed, gender):
+
+def getRandomDNA(seed, eyelashes):
     randomDNA = ToonDNA.ToonDNA()
-    randomDNA.newToonRandom(seed, gender, 1)
+    randomDNA.newToonRandom(seed, eyelashes, 1)
     return randomDNA.asTuple()
 
 
@@ -81,7 +82,7 @@ def createNPC(air, npcId, desc, zoneId, posIndex = 0, questCallback = None):
     from . import DistributedNPCSpecialQuestGiverAI
     from . import DistributedNPCFlippyInToonHallAI
     from . import DistributedNPCScientistAI
-    canonicalZoneId, name, dnaType, gender, protected, type = desc
+    canonicalZoneId, name, dnaType, eyelashes, protected, type = desc
     if type == NPC_REGULAR:
         npc = DistributedNPCToonAI.DistributedNPCToonAI(air, npcId, questCallback=questCallback)
     elif type == NPC_HQ:
@@ -111,7 +112,7 @@ def createNPC(air, npcId, desc, zoneId, posIndex = 0, questCallback = None):
     npc.setName(name)
     dna = ToonDNA.ToonDNA()
     if dnaType == 'r':
-        dnaList = getRandomDNA(npcId, gender)
+        dnaList = getRandomDNA(npcId, eyelashes)
     else:
         dnaList = dnaType
     if saveDNA:
@@ -139,7 +140,8 @@ def createNPC(air, npcId, desc, zoneId, posIndex = 0, questCallback = None):
             rtDnaFile = open(RTDNAFile, 'w')
             rtDnaFile.writelines(rtDNA)
         rtDnaFile.close()
-    dna.newToonFromProperties(*dnaList)
+
+    dna.newToonFromProperties(*dnaList, isNPC=True)
     npc.setDNAString(dna.makeNetString())
     npc.setHp(15)
     npc.setMaxHp(15)
@@ -169,17 +171,17 @@ def createLocalNPC(npcId):
     if npcId not in NPCToonDict:
         return None
     desc = NPCToonDict[npcId]
-    canonicalZoneId, name, dnaType, gender, protected, type = desc
+    canonicalZoneId, name, dnaType, eyelashes, protected, type = desc
     npc = Toon.Toon()
     npc.setName(name)
     npc.setPickable(0)
     npc.setPlayerType(NametagGroup.CCNonPlayer)
     dna = ToonDNA.ToonDNA()
     if dnaType == 'r':
-        dnaList = getRandomDNA(npcId, gender)
+        dnaList = getRandomDNA(npcId, eyelashes)
     else:
         dnaList = dnaType
-    dna.newToonFromProperties(*dnaList)
+    dna.newToonFromProperties(*dnaList, isNPC=True)
     npc.setDNAString(dna.makeNetString())
     npc.animFSM.request('neutral')
     return npc

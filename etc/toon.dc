@@ -256,6 +256,7 @@ from toontown.parties import DistributedPartyJukebox40Activity/AI
 from toontown.parties import DistributedPartyValentineJukeboxActivity/AI
 from toontown.parties import DistributedPartyValentineJukebox40Activity/AI
 from toontown.friends import TTPlayerFriendsManager/UD
+from toontown.friends import ToontownFriendsManager/AI/UD
 from toontown.uberdog import TTSpeedchatRelay/UD
 from toontown.safezone import DistributedGolfKart/AI
 from toontown.safezone import DistributedPicnicBasket/AI
@@ -2851,6 +2852,28 @@ dclass TTAvatarFriendsManager : AvatarFriendsManager {
 };
 
 dclass TTPlayerFriendsManager : PlayerFriendsManager {
+};
+
+struct Friend {
+  uint32 doId;
+  string name;
+  blob dnaString;
+  uint32 petId;
+};
+
+// Astron-specific Friends Manager
+dclass ToontownFriendsManager : DistributedObject {
+  getFriendsListRequest() clsend;
+  getFriendsListResponse(bool success, Friend friends[]);
+  friendOnline(uint32 friendId, uint8 commonChatFlags, uint8 whitelistChatFlags);
+  friendOffline(uint32 friendId);
+  goingOffline(uint32 friendId);
+  getAvatarDetailsRequest(uint32 avId) clsend;
+  getAvatarDetailsResponse(blob avatarDetails);
+  makeFriends(uint32, uint32, uint8, uint32);
+  makeFriendsResponse(uint32, uint32, uint8, uint32) airecv;
+  removeFriend(uint32) clsend;
+  requestSecret(uint32);
 };
 
 dclass TTSpeedchatRelay : SpeedchatRelay {
