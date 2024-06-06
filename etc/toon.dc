@@ -523,6 +523,14 @@ dclass DistributedToon : DistributedPlayer {
   setCogLevels(uint8[] = [0 * 4]) required broadcast ownrecv db;
   setCogTypes(uint8[] = [0 * 4]) required broadcast ownrecv db;
   setCogParts(uint32[] = [0 * 4]) required broadcast ownrecv db;
+  setSellbotV2Suit(bool) required broadcast ownrecv db;
+  setCashbotV2Suit(bool) required broadcast ownrecv db;
+  setLawbotV2Suit(bool)  required broadcast ownrecv db;
+  setBossbotV2Suit(bool) required broadcast ownrecv db;
+  upgradeSellbotSuit() ownsend airecv;
+  upgradeCashbotSuit() ownsend airecv;
+  upgradeLawbotSuit() ownsend airecv;
+  upgradeBossbotSuit() ownsend airecv;
   setCogMerits(uint16[] = [0 * 4]) required ownrecv db;
   setCogIndex(int8) broadcast ram;
   setDisguisePageFlag(int8) ownrecv;

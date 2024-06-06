@@ -204,6 +204,10 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
         self.hostedParties = []
         self.partiesInvitedTo = []
         self.partyReplyInfoBases = []
+        self.hasSellbotV2Suit = False
+        self.hasCashbotV2Suit = False
+        self.hasLawbotV2Suit = False
+        self.hasBossbotV2Suit = False
         return
 
     def generate(self):
@@ -1422,7 +1426,113 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
             return 1
         else:
             return 0
+        
+    def isMaxedSellbotSuit(self):
+        return self.cogLevels[3] == ToontownGlobals.MaxCogSuitLevel
+        
 
+    def isMaxedBossbotSuit(self):
+        return self.cogLevels[0] == ToontownGlobals.MaxCogSuitLevel
+
+    def isMaxedCashbotSuit(self):
+        return self.cogLevels[2] == ToontownGlobals.MaxCogSuitLevel
+
+    def isMaxedLawbotSuit(self):
+        return self.cogLevels[1] == ToontownGlobals.MaxCogSuitLevel
+        
+
+    def b_setSellbotV2Suit(self, flag):
+        self.setSellbotV2Suit(flag)
+        self.d_setSellbotV2Suit(flag)
+
+    def b_setCashbotV2Suit(self, flag):
+        self.setCashbotV2Suit(flag)
+        self.d_setCashbotV2Suit(flag)
+
+    def b_setLawbotV2Suit(self, flag):
+        self.setLawbotV2Suit(flag)
+        self.d_setLawbotV2Suit(flag)
+
+    def b_setBossbotV2Suit(self, flag):
+        self.setBossbotV2Suit(flag)
+        self.d_setBossbotV2Suit(flag)
+
+    def d_setSellbotV2Suit(self, flag):
+        self.sendUpdate('setSellbotV2Suit', [flag])
+    
+    def d_setCashbotV2Suit(self, flag):
+        self.sendUpdate('setCashbotV2Suit', [flag])
+
+    def d_setLawbotV2Suit(self, flag):
+        self.sendUpdate('setLawbotV2Suit', [flag])
+
+    def d_setBossbotV2Suit(self, flag):
+        self.sendUpdate('setBossbotV2Suit', [flag])
+
+    def setSellbotV2Suit(self, flag):
+        self.hasSellbotV2Suit = flag
+
+    def resetCogDisguiseV2(self, dept):
+        # resets cog disguise for v2 promo depending on dept 
+        origCogLevels = self.getCogLevels()
+        newCogLevels = origCogLevels[:]
+        newCogLevels[dept] = 7
+        self.b_setCogLevels(newCogLevels)
+        origCogMerits = self.getCogMerits()
+        newCogMerits = origCogMerits[:]
+        newCogMerits[dept] = 0
+        self.b_setCogMerits(newCogMerits)
+
+    def upgradeSellbotSuit(self):
+        # If the suit is not maxed, , dont upgrade
+        print('ai: upgradeSellbotV2Suit')
+        if not self.isMaxedSellbotSuit():
+            return
+        # reset the cog level back to 8 but only for sellbot
+        self.resetCogDisguiseV2(3)
+        self.b_setSellbotV2Suit(True)
+
+    def setCashbotV2Suit(self, flag):
+        self.hasCashbotV2Suit = flag
+
+    def upgradeCashbotSuit(self):
+
+        if not self.isMaxedCashbotSuit():
+            return
+            
+        self.resetCogDisguiseV2(2)
+        self.b_setCashbotV2Suit(True)
+
+    def setLawbotV2Suit(self, flag):
+        self.hasLawbotV2Suit = flag
+
+    def upgradeLawbotSuit(self):
+        if not self.isMaxedLawbotSuit():
+            return
+        self.resetCogDisguiseV2(1)
+        self.b_setLawbotV2Suit(True)
+
+    def setBossbotV2Suit(self, flag):
+        self.hasBossbotV2Suit = flag
+
+    def upgradeBossbotSuit(self):
+        if not self.isMaxedBossbotSuit():
+            return
+        self.resetCogDisguiseV2(0)
+        self.b_setBossbotV2Suit(True)
+
+    def getSellbotV2Suit(self):
+        return self.hasSellbotV2Suit
+    
+    def getCashbotV2Suit(self):
+        return self.hasCashbotV2Suit
+    
+    def getLawbotV2Suit(self):
+        return self.hasLawbotV2Suit
+    
+    def getBossbotV2Suit(self):
+        return self.hasBossbotV2Suit
+    
     def b_setCogIndex(self, index):
         self.setCogIndex(index)
         if simbase.config.GetBool('cogsuit-hack-prevent', False):

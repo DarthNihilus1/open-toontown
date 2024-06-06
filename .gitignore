@@ -20,3 +20,5 @@ venv/
 PPYTHON_PATH
 local/
 errorCode
+otpgo/otpgo
+astron/darwin/astrond-arm

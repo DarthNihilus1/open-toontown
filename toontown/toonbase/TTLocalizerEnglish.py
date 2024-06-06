@@ -9761,3 +9761,6 @@ InteractivePropTrackBonusTerms = {0: 'Super Toon-Up!',
  5: 'Super Squirt!',
  6: ''}
 PlayingCardUnknown = 'Card Name is unknown'
+
+TwoPointO = 'v2.0'
+DisguisePageUpgrade = "Upgrade"

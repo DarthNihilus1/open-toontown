@@ -68,6 +68,15 @@ class DisguisePage(ShtikerPage.ShtikerPage):
         self.promotionTitle = DirectLabel(parent=self.frame, relief=None, geom=gui.find('**/text_ready4promotion'), geom_pos=(0, 0.1, 0))
         self.cogName = DirectLabel(parent=self.frame, relief=None, text='', text_font=ToontownGlobals.getSuitFont(), text_scale=TTLocalizer.DPcogName, text_align=TextNode.ACenter, pos=(-0.948, 0, -1.15))
         self.cogLevel = DirectLabel(parent=self.frame, relief=None, text='', text_font=ToontownGlobals.getSuitFont(), text_scale=0.09, text_align=TextNode.ACenter, pos=(-0.91, 0, -1.02))
+        # label that only shows when the toon has a 2.0 suit, will display v2.0
+        self.sellbotTwoPointOLabel = DirectLabel(parent=self.frame, relief=None, text=TTLocalizer.TwoPointO, text_font=ToontownGlobals.getSuitFont(), text_scale=0.09, text_align=TextNode.ACenter, pos=(-0.91, 0, -0.95))
+        self.sellbotTwoPointOLabel.hide()
+        self.cashbotTwoPointOLabel = DirectLabel(parent=self.frame, relief=None, text=TTLocalizer.TwoPointO, text_font=ToontownGlobals.getSuitFont(), text_scale=0.09, text_align=TextNode.ACenter, pos=(-0.91, 0, -0.95))
+        self.cashbotTwoPointOLabel.hide()
+        self.lawbotTwoPointOLabel = DirectLabel(parent=self.frame, relief=None, text=TTLocalizer.TwoPointO, text_font=ToontownGlobals.getSuitFont(), text_scale=0.09, text_align=TextNode.ACenter, pos=(-0.91, 0, -0.95))
+        self.lawbotTwoPointOLabel.hide()
+        self.bossbotTwoPointOLabel = DirectLabel(parent=self.frame, relief=None, text=TTLocalizer.TwoPointO, text_font=ToontownGlobals.getSuitFont(), text_scale=0.09, text_align=TextNode.ACenter, pos=(-0.91, 0, -0.95))
+        self.bossbotTwoPointOLabel.hide()
         self.partFrame = DirectFrame(parent=self.frame, relief=None)
         self.parts = []
         for partNum in range(0, NumParts):
@@ -79,6 +88,16 @@ class DisguisePage(ShtikerPage.ShtikerPage):
 
         self.cogPartRatio = DirectLabel(parent=self.frame, relief=None, text='', text_font=ToontownGlobals.getSuitFont(), text_scale=0.08, text_align=TextNode.ACenter, pos=(-0.91, 0, -0.82))
         self.cogMeritRatio = DirectLabel(parent=self.frame, relief=None, text='', text_font=ToontownGlobals.getSuitFont(), text_scale=0.08, text_align=TextNode.ACenter, pos=(0.45, 0, -0.36))
+         # an upgrade button for each department if the toon has a maxed suit , this button promotes a toon to a v2.0 suit which allows them to change between different suits at will 
+        self.sellbotUpgradeButton = DirectButton(parent=self.frame, relief=None, text=TTLocalizer.DisguisePageUpgrade, text_font=ToontownGlobals.getSuitFont(), text_scale=0.09, text_align=TextNode.ACenter, pos=(0.55, 0, -0.96), command=base.localAvatar.b_upgradeSellbotSuit)
+        self.cashbotUpgradeButton = DirectButton(parent=self.frame, relief=None, text=TTLocalizer.DisguisePageUpgrade, text_font=ToontownGlobals.getSuitFont(), text_scale=0.09, text_align=TextNode.ACenter, pos=(0.55, 0, -0.96), command=base.localAvatar.b_upgradeCashbotSuit)
+        self.lawbotUpgradeButton = DirectButton(parent=self.frame, relief=None, text=TTLocalizer.DisguisePageUpgrade, text_font=ToontownGlobals.getSuitFont(), text_scale=0.09, text_align=TextNode.ACenter, pos=(0.55, 0, -0.96), command=base.localAvatar.b_upgradeLawbotSuit)
+        self.bossbotUpgradeButton = DirectButton(parent=self.frame, relief=None, text=TTLocalizer.DisguisePageUpgrade, text_font=ToontownGlobals.getSuitFont(), text_scale=0.09, text_align=TextNode.ACenter, pos=(0.55, 0, -0.96), command=base.localAvatar.b_upgradeBossbotSuit)
+        # now hide them all
+        self.sellbotUpgradeButton.hide()
+        self.cashbotUpgradeButton.hide()
+        self.lawbotUpgradeButton.hide()
+        self.bossbotUpgradeButton.hide()
         meterFace = gui.find('**/meter_face_whole')
         meterFaceHalf = gui.find('**/meter_face_half')
         self.meterFace = DirectLabel(parent=self.frame, relief=None, geom=meterFace, color=self.meterColor, pos=(0.455, 0.0, 0.04))
@@ -160,6 +179,18 @@ class DisguisePage(ShtikerPage.ShtikerPage):
                 progress = progress - 0.5
             self.meterFaceHalf2.setR(180 * (progress / 0.5))
 
+    def hideV2Labels(self):
+        self.sellbotTwoPointOLabel.hide()
+        self.cashbotTwoPointOLabel.hide()
+        self.lawbotTwoPointOLabel.hide()
+        self.bossbotTwoPointOLabel.hide()
+
+    def hideUpgradeButtons(self):
+        self.sellbotUpgradeButton.hide()
+        self.cashbotUpgradeButton.hide()
+        self.lawbotUpgradeButton.hide()
+        self.bossbotUpgradeButton.hide()
+
     def doTab(self, index):
         self.activeTab = index
         self.tabs[index].reparentTo(self.pageFrame)
@@ -179,12 +210,59 @@ class DisguisePage(ShtikerPage.ShtikerPage):
         self.progressTitle.hide()
         if SuitDNA.suitDepts[index] == 'm':
             self.progressTitle = self.cogbuckTitle
+            # show the v2 label if the toon has a 2.0 suit
+            if base.localAvatar.getCashbotV2Suit():
+                self.hideV2Labels()
+                self.cashbotTwoPointOLabel.show()
+            else:
+                self.hideV2Labels()
+            if base.localAvatar.isMaxedCashbotSuit() and not base.localAvatar.getCashbotV2Suit():
+                self.hideUpgradeButtons()
+                self.cashbotUpgradeButton.show()
+            else:
+                self.hideUpgradeButtons()
+                
+
+            
         elif SuitDNA.suitDepts[index] == 'l':
             self.progressTitle = self.juryNoticeTitle
+            # show the v2 label if the toon has a 2.0 suit
+            if base.localAvatar.getLawbotV2Suit():
+                self.hideV2Labels()
+                self.lawbotTwoPointOLabel.show()
+            else:
+                self.hideV2Labels()
+            if base.localAvatar.isMaxedLawbotSuit() and not base.localAvatar.getLawbotV2Suit():
+                self.hideUpgradeButtons()
+                self.lawbotUpgradeButton.show()
+            else:
+                self.hideUpgradeButtons()
         elif SuitDNA.suitDepts[index] == 'c':
             self.progressTitle = self.stockOptionTitle
+            # show the v2 label if the toon has a 2.0 suit
+            if base.localAvatar.getBossbotV2Suit():
+                self.hideV2Labels()
+                self.bossbotTwoPointOLabel.show()
+            else:
+                self.hideV2Labels()
+            if base.localAvatar.isMaxedBossbotSuit() and not base.localAvatar.getBossbotV2Suit():
+                self.hideUpgradeButtons()
+                self.bossbotUpgradeButton.show()
+            else:
+                self.hideUpgradeButtons()
         else:
             self.progressTitle = self.meritTitle
+            # show the v2 label if the toon has a 2.0 suit
+            if base.localAvatar.getSellbotV2Suit():
+                self.hideV2Labels()
+                self.sellbotTwoPointOLabel.show()
+            else:
+                self.hideV2Labels()
+            if base.localAvatar.isMaxedSellbotSuit() and not base.localAvatar.getSellbotV2Suit():
+                self.hideUpgradeButtons()
+                self.sellbotUpgradeButton.show()
+            else:
+                self.hideUpgradeButtons()
         self.progressTitle.show()
         self.cogName['text'] = SuitBattleGlobals.SuitAttributes[cog]['name']
         cogLevel = base.localAvatar.cogLevels[index]

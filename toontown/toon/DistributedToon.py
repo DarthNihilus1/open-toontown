@@ -186,6 +186,10 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
         self.gmNameTagColor = 'whiteGM'
         self.gmNameTagString = ''
         self.transitioning = False
+        self.hasSellbotV2Suit = False
+        self.hasCashbotV2Suit = False
+        self.hasLawbotV2Suit = False
+        self.hasBossbotV2Suit = False
         return
 
     def disable(self):
@@ -923,7 +927,93 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
             return 1
         else:
             return 0
+    
 
+    def isMaxedSellbotSuit(self):
+        if self.cogLevels[3] == ToontownGlobals.MaxCogSuitLevel:
+            return True
+
+    def isMaxedBossbotSuit(self):
+        if self.cogLevels[0] == ToontownGlobals.MaxCogSuitLevel:
+            return True
+
+    def isMaxedCashbotSuit(self):
+        if self.cogLevels[2] == ToontownGlobals.MaxCogSuitLevel:
+            return True
+
+    def isMaxedLawbotSuit(self):
+        if self.cogLevels[1] == ToontownGlobals.MaxCogSuitLevel:
+            return True
+        
+    def setSellbotV2Suit(self, flag):
+        self.hasSellbotV2Suit = flag
+    
+    def b_upgradeSellbotSuit(self):
+        self.d_upgradeSellbotSuit()
+        self.upgradeSellbotSuit()
+
+    def d_upgradeSellbotSuit(self):
+        self.sendUpdate('upgradeSellbotSuit', [])
+
+    def upgradeSellbotSuit(self):
+        if self.disguisePage:
+            self.disguisePage.updatePage()
+
+       
+    def setCashbotV2Suit(self, flag):
+        self.hasCashbotV2Suit = flag
+
+    def b_upgradeCashbotSuit(self):
+        self.d_upgradeCashbotSuit()
+        self.upgradeCashbotSuit()
+
+    def d_upgradeCashbotSuit(self):
+        self.sendUpdate('upgradeCashbotSuit', [])
+
+    def upgradeCashbotSuit(self):
+        if self.disguisePage:
+            self.disguisePage.updatePage()
+
+    def setLawbotV2Suit(self, flag):
+        self.hasLawbotV2Suit = flag
+       
+    def b_upgradeLawbotSuit(self):
+        self.d_upgradeLawbotSuit()
+        self.upgradeLawbotSuit()
+
+    def d_upgradeLawbotSuit(self):
+        self.sendUpdate('upgradeLawbotSuit', [])
+
+    def upgradeLawbotSuit(self):
+        if self.disguisePage:
+            self.disguisePage.updatePage()
+
+    def setBossbotV2Suit(self, flag):
+        self.hasBossbotV2Suit = flag
+
+    def b_upgradeBossbotSuit(self):
+        self.d_upgradeBossbotSuit()
+        self.upgradeBossbotSuit()
+
+    def d_upgradeBossbotSuit(self):
+        self.sendUpdate('upgradeBossbotSuit', [])
+
+    def upgradeBossbotSuit(self):
+        if self.disguisePage:
+            self.disguisePage.updatePage()
+
+    def getSellbotV2Suit(self):
+        return self.hasSellbotV2Suit
+    
+    def getCashbotV2Suit(self):
+        return self.hasCashbotV2Suit
+    
+    def getLawbotV2Suit(self):
+        return self.hasLawbotV2Suit
+    
+    def getBossbotV2Suit(self):
+        return self.hasBossbotV2Suit
+    
     def setCogIndex(self, index):
         self.cogIndex = index
         if self.cogIndex == -1:
@@ -2592,3 +2682,6 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
 
     def toggleSleep(self):
         base.localAvatar.noSleep = not base.localAvatar.noSleep
+
+
+        

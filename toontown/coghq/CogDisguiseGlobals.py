@@ -325,6 +325,8 @@ MeritsPerLevel = ((100,
   2360,
   5500,
   0))
+# merits required to get to next level for v2 suit (not required to enter boss)
+# v2MeritsPerLevel = 
 leftLegUpper = 1
 leftLegLower = 2
 leftLegFoot = 4
