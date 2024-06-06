@@ -98,6 +98,8 @@ class ToontownAIRepository(ToontownInternalRepository):
         self.toontownFriendsManager = None
         self.estateMgr = None
         self.partyManager = None
+        if simbase.wantBingo:
+            self.bingoMgr = None
         self.zoneTable = {}
         self.dnaStoreMap = {}
         self.dnaDataMap = {}
@@ -551,3 +553,39 @@ class ToontownAIRepository(ToontownInternalRepository):
     def setupFiles(self):
         if not os.path.exists(self.dataFolder):
             os.mkdir(self.dataFolder)
+            
+    def createPondBingoMgrAI(self, estate):
+        """
+        estate - the estate for which the PBMgrAI should
+                be created.
+        returns: None
+
+        This method instructs the BingoManagerAI to
+        create a new PBMgrAI for a newly generated
+        estate.
+        """
+        # Guard for publish
+        if simbase.wantBingo:
+            if self.bingoMgr:
+                self.notify.info('createPondBingoMgrAI: Creating a DPBMAI for Dynamic Estate')
+                self.bingoMgr.createPondBingoMgrAI(estate, 1)
+    def handleAvCatch(self, avId, zoneId, catch):
+        """
+        avId - ID of avatar to update
+        zoneId - zoneId of the pond the catch was made in.
+                This is used by the BingoManagerAI to
+                determine which PBMgrAI needs to update
+                the catch.
+        catch - a fish tuple of (genus, species)
+        returns: None
+        
+        This method instructs the BingoManagerAI to
+        tell the appropriate PBMgrAI to update the
+        catch of an avatar at the particular pond. This
+        method is called in the FishManagerAI's
+        RecordCatch method.
+        """
+        # Guard for publish
+        if simbase.wantBingo:
+            if self.bingoMgr:
+                self.bingoMgr.setAvCatchForPondMgr(avId, zoneId, catch)

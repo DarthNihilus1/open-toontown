@@ -63,7 +63,7 @@ class BingoNightHolidayAI(HolidayBaseAI.HolidayBaseAI):
     # Output: None
     ############################################################
     def start(self):
-
+        return # TODO add this back when we have estates fully implemented
         if self.air.bingoMgr:
             raise PythonUtil.SingletonError("Bingo Manager already Exists! DO NOT RUN HOLIDAY!!")
         else:
