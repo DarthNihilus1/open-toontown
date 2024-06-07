@@ -16,7 +16,7 @@ class DistributedVPElevatorAI(DistributedBossElevatorAI.DistributedBossElevatorA
         boardingResult = 0
         if av.hp < self.minLaff:
             boardingResult = REJECT_MINLAFF
-        if not av.readyForPromotion(dept):
+        if not av.readyForPromotion(dept) and not av.getV2Suit(dept):
             boardingResult = REJECT_PROMOTION
         if ToontownGlobals.SELLBOT_NERF_HOLIDAY in self.air.holidayManager.currentHolidays:
             boardingResult = 0

@@ -1014,6 +1014,18 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
     def getBossbotV2Suit(self):
         return self.hasBossbotV2Suit
     
+    def getV2Suit(self, dept):
+        # check if the suit is v2 based on the department 
+        if dept == 0:
+            return self.hasBossbotV2Suit
+        elif dept == 1:
+            return self.hasLawbotV2Suit
+        elif dept == 2:
+            return self.hasCashbotV2Suit
+        elif dept == 3:
+            return self.hasSellbotV2Suit
+        else:
+            return False
     def setCogIndex(self, index):
         self.cogIndex = index
         if self.cogIndex == -1:

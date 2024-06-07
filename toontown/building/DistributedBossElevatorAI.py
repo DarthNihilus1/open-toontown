@@ -56,7 +56,8 @@ class DistributedBossElevatorAI(DistributedElevatorExtAI.DistributedElevatorExtA
         dept = ToontownGlobals.cogHQZoneId2deptIndex(self.zone)
         if av.hp < self.minLaff:
             return REJECT_MINLAFF
-        if not av.readyForPromotion(dept):
+        # check that the toon is ready for promotion but also check if they have a v2 suit
+        if not av.readyForPromotion(dept) and not av.getV2Suit(dept):
             return REJECT_PROMOTION
         return 0
 
