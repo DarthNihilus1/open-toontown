@@ -144,7 +144,10 @@ class DisguisePage(ShtikerPage.ShtikerPage):
 
     def updateMeritBar(self, dept):
         merits = base.localAvatar.cogMerits[dept]
-        totalMerits = CogDisguiseGlobals.getTotalMerits(base.localAvatar, dept)
+        if base.localAvatar.getV2Suit(dept):
+            totalMerits = CogDisguiseGlobals.getTotalV2Merits(base.localAvatar, dept)
+        else:
+            totalMerits = CogDisguiseGlobals.getTotalMerits(base.localAvatar, dept)
         if totalMerits == 0:
             progress = 1
         else:

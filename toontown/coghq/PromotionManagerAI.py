@@ -63,7 +63,10 @@ class PromotionManagerAI:
              0]
             merits = av.getCogMerits()
             for i in range(len(meritsRecovered)):
-                max = CogDisguiseGlobals.getTotalMerits(av, i)
+                if av.getV2Suit(i):
+                    max = CogDisguiseGlobals.getTotalV2Merits(av,i)
+                else:
+                    max = CogDisguiseGlobals.getTotalMerits(av, i)
                 if max:
                     if merits[i] + meritsRecovered[i] <= max:
                         actualCounted[i] = meritsRecovered[i]

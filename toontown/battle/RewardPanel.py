@@ -109,7 +109,10 @@ class RewardPanel(DirectFrame):
         return ToontownBattleGlobals.UberSkill
 
     def getNextMeritValue(self, curMerits, toon, dept):
-        totalMerits = CogDisguiseGlobals.getTotalMerits(toon, dept)
+        if not toon.getV2Suit(dept):
+            totalMerits = CogDisguiseGlobals.getTotalMerits(toon, dept)
+        else:
+            totalMerits = CogDisguiseGlobals.getTotalV2Merits(toon, dept)
         retVal = totalMerits
         if curMerits > totalMerits:
             retVal = amount
@@ -194,7 +197,10 @@ class RewardPanel(DirectFrame):
         for i in range(len(SuitDNA.suitDepts)):
             meritBar = self.meritBars[i]
             meritLabel = self.meritLabels[i]
-            totalMerits = CogDisguiseGlobals.getTotalMerits(toon, i)
+            if toon.getV2Suit(i):
+                totalMerits = CogDisguiseGlobals.getTotalV2Merits(toon, i)
+            else:
+                totalMerits = CogDisguiseGlobals.getTotalMerits(toon, i)
             merits = meritList[i]
             self.meritIncLabels[i].hide()
             if CogDisguiseGlobals.isSuitComplete(toon.cogParts, i):
@@ -501,7 +507,10 @@ class RewardPanel(DirectFrame):
     def getMeritIntervalList(self, toon, dept, origMerits, earnedMerits):
         tickDelay = 1.0 / 60
         intervalList = []
-        totalMerits = CogDisguiseGlobals.getTotalMerits(toon, dept)
+        if toon.getV2Suit(dept):
+            totalMerits = CogDisguiseGlobals.getTotalV2Merits(toon, dept)
+        else:
+            totalMerits = CogDisguiseGlobals.getTotalMerits(toon, dept)
         neededMerits = 0
         if totalMerits and origMerits != totalMerits:
             neededMerits = totalMerits - origMerits
