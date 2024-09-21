@@ -125,6 +125,12 @@ function receiveDatagram(client, dgi)
         handleCreateAvatar(client, dgi)
     elseif msgType == CLIENT_SET_NAME_PATTERN then
         handleSetNamePattern(client, dgi)
+    elseif msgType == CLIENT_SET_AVATAR then
+        handleSetAvatar(client, dgi)
+    elseif msgType == CLIENT_GET_FRIEND_LIST then
+        handleGetFriendList(client)
+    elseif msgType == CLIENT_OBJECT_LOCATION then
+        client:setLocation(dgi)
     else
         client:sendDisconnect(CLIENT_DISCONNECT_GENERIC, string.format("Unknown message type: %d", msgType), true)
     end
@@ -540,5 +546,205 @@ function handleSetNamePattern(client, dgi)
     resp:addUint32(avId)
     resp:addUint8(0)
 
+    client:sendDatagram(resp)
+end
+
+function checkIsAvInList(avatarId, avatarList)
+    local isAvInList = false
+    for _, avId in ipairs(avatarList) do
+        if avatarId == avId then
+            isAvInList = true
+            break
+        end
+    end
+
+    return isAvInList
+end
+
+function handleSetAvatar(client, dgi)
+    local userTable = client:userTable()
+    local accountId = userTable.accountId
+
+    local avatarId = dgi:readUint32()
+
+    if avatarId == 0 then
+        clearAvatar(client)
+        return
+    end
+
+    local isAvInList = checkIsAvInList(avatarId, userTable.avatars)
+    if not isAvInList then
+        client:sendDisconnect(CLIENT_DISCONNECT_GENERIC, string.format("Avatar %d not in list.", avatarId), true)
+        return
+    end
+
+    userTable.avatarId = avatarId
+    userTable.friendQueue = {}
+    client:userTable(userTable)
+
+    client:setChannel(accountId, avatarId)
+
+    local setAccess = 1
+    if userTable.isPaid then
+        setAccess = 2
+    end
+
+    client:sendActivateObject(avatarId, "DistributedToon", {
+        setAccess = {setAccess},
+    })
+
+    client:objectSetOwner(avatarId, true)
+
+    -- Let the UberDOG know about our avatar usage.
+    sendUsage(client, userTable.playToken, userTable.openChat, 0, avatarId, accountId, userTable.isPaid, false)
+
+    -- Let the UberDOG know about our avatar usage (going offline).
+    sendUsage(client, userTable.playToken, userTable.openChat, avatarId, 0, accountId, userTable.isPaid, true)
+end
+
+function sendUsage(client, playToken, openChat, priorAvatar, newAvatar, accountId, isPaid, postRemove)
+    -- Log avatar usage
+    local playerName = playToken
+    local playerNameApproved = 1
+    local openChatEnabled = "NO"
+
+    if openChat then
+        openChatEnabled = "YES"
+    end
+
+    local createFriendsWithChat = "YES"
+    local chatCodeCreation = "YES"
+
+    local avatarId
+
+    if priorAvatar ~= 0 then
+        avatarId = priorAvatar
+    else
+        avatarId = newAvatar
+    end
+
+    local dg = datagram:new()
+    dg:addServerHeader(CHANNEL_PUPPET_ACTION, avatarId, ACCOUNT_AVATAR_USAGE)
+
+    dg:addUint32(priorAvatar) -- priorAvatar
+    dg:addUint32(newAvatar) -- newAvatar
+    dg:addUint16(0) -- newAvatarType
+    dg:addUint32(accountId) -- accountId
+    dg:addString(openChatEnabled) -- openChatEnabled
+    dg:addString(createFriendsWithChat) -- createFriendsWithChat
+    dg:addString(chatCodeCreation) -- chatCodeCreation
+
+    if isPaid then
+        dg:addString("FULL") -- piratesAccess
+    else
+        dg:addString("VELVET") -- piratesAccess
+    end
+
+    dg:addInt32(0) -- familyAccountId
+    dg:addInt32(accountId) -- playerAccountId
+
+    dg:addString(playerName) -- playerName
+    dg:addInt8(playerNameApproved) -- playerNameApproved
+
+    -- maxAvatars
+    local maxAvatars
+
+    if isPaid then
+        maxAvatars = 6
+    else
+        maxAvatars = 1
+    end
+
+    dg:addInt32(maxAvatars) -- maxAvatars
+
+    dg:addInt16(0) -- numFamilyMembers
+
+    if postRemove then
+        client:addPostRemove(dg)
+    else
+        client:routeDatagram(dg)
+    end
+end
+
+function clearAvatar(client)
+    local userTable = client:userTable()
+
+    if userTable.avatarId == nil then
+        return
+    end
+
+    client:removeSessionObject(userTable.avatarId)
+    client:unsubscribePuppetChannel(userTable.avatarId, 1)
+
+    dg = datagram:new()
+    client:addServerHeader(dg, userTable.avatarId, STATESERVER_OBJECT_DELETE_RAM)
+    dg:addUint32(userTable.avatarId)
+    client:routeDatagram(dg)
+
+    client:clearPostRemoves()
+
+    userTable.avatarId = nil
+    userTable.friendsList = nil
+    client:userTable(userTable)
+
+    client:setChannel(userTable.accountId, 0)
+end
+
+function handleAddOwnership(client, doId, parent, zone, dc, dgi)
+    local userTable = client:userTable()
+    local accountId = userTable.accountId
+    local avatarId = userTable.avatarId
+
+    if doId ~= avatarId then
+        client:warn(string.format("Got AddOwnership for object %d, our avatarId is %d", doId, avatarId))
+        return
+    end
+
+    client:addSessionObject(doId)
+    client:subscribePuppetChannel(avatarId, 1)
+
+    -- Store name for SpeedChat Plus
+    local name = dgi:readString()
+    userTable.avatarName = name
+    client:userTable(userTable)
+
+    local remainder = dgi:readRemainder()
+
+    client:writeServerEvent("selected-avatar", "ToontownClient", string.format("%d|%d", accountId, avatarId))
+
+    local resp = datagram:new()
+    resp:addUint16(CLIENT_GET_AVATAR_DETAILS_RESP)
+    resp:addUint32(doId) -- avatarId
+    resp:addUint8(0) -- returnCode
+    resp:addString(name) -- setName
+    resp:addData(remainder)
+    client:sendDatagram(resp)
+
+    -- Update common chat flags:
+    local dg = datagram:new()
+    dg:addServerHeader(avatarId, avatarId, STATESERVER_OBJECT_UPDATE_FIELD)
+    dg:addUint32(avatarId)
+    client:packFieldToDatagram(dg, "DistributedToon", "setCommonChatFlags", {0}, true)
+    client:routeDatagram(dg)
+
+    -- Update whitelist chat flags:
+    local dg = datagram:new()
+    dg:addServerHeader(avatarId, avatarId, STATESERVER_OBJECT_UPDATE_FIELD)
+    dg:addUint32(avatarId)
+    if userTable.speedChatPlus then
+        client:packFieldToDatagram(dg, "DistributedToon", "setWhitelistChatFlags", {1}, true)
+    else
+        client:packFieldToDatagram(dg, "DistributedToon", "setWhitelistChatFlags", {0}, true)
+    end
+
+    client:routeDatagram(dg)
+end
+
+function handleGetFriendList(client)
+    -- TODO: Friends
+    local resp = datagram:new()
+    resp:addUint16(CLIENT_GET_FRIEND_LIST_RESP)
+    resp:addUint8(0) -- errorCode
+    resp:addUint16(0) -- count
     client:sendDatagram(resp)
 end
