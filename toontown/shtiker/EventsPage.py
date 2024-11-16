@@ -190,7 +190,7 @@ class EventsPage(ShtikerPage.ShtikerPage):
             textForActivity = activityName
         else:
             textForActivity = '%s x %d' % (activityName, count)
-        iconString = PartyGlobals.ActivityIds.getString(activityBase.activityId)
+        iconString = PartyGlobals.ActivityIds(activityBase.activityId).name
         geom = getPartyActivityIcon(self.activityIconsModel, iconString)
         label = DirectLabel(relief=None, geom=geom, geom_scale=0.38, geom_pos=Vec3(0.0, 0.0, -0.17), text=textForActivity, text_scale=TTLocalizer.EPactivityItemLabel, text_align=TextNode.ACenter, text_pos=(-0.01, -0.43), text_wordwrap=7.0)
         return label
@@ -201,7 +201,7 @@ class EventsPage(ShtikerPage.ShtikerPage):
             textForDecoration = decorationName
         else:
             textForDecoration = decorationName + ' x ' + str(count)
-        assetName = PartyGlobals.DecorationIds.getString(decorBase.decorId)
+        assetName = PartyGlobals.DecorationIds(decorBase.decorId).name
         if assetName == 'Hydra':
             assetName = 'StageSummer'
         label = DirectLabel(relief=None, geom=self.decorationModels.find('**/partyDecoration_%s' % assetName), text=textForDecoration, text_scale=TTLocalizer.EPdecorationItemLabel, text_align=TextNode.ACenter, text_pos=(-0.01, -0.43), text_wordwrap=7.0)
@@ -277,7 +277,7 @@ class EventsPage(ShtikerPage.ShtikerPage):
                 textOfActivity = TTLocalizer.PartyActivityNameDict[activityId]['generic']
             else:
                 textOfActivity = TTLocalizer.PartyActivityNameDict[activityId]['generic'] + ' x ' + str(countDict[activityId])
-            geom = getPartyActivityIcon(self.activityIconsModel, PartyGlobals.ActivityIds.getString(activityId))
+            geom = getPartyActivityIcon(self.activityIconsModel, PartyGlobals.ActivityIds(activityId).name)
             item = DirectLabel(relief=None, text=textOfActivity, text_align=TextNode.ACenter, text_scale=0.05, text_pos=(0.0, -0.15), geom_scale=0.3, geom_pos=Vec3(0.0, 0.0, 0.07), geom=geom)
             self.invitationActivityList.addItem(item)
 

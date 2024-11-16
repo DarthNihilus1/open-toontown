@@ -2,6 +2,7 @@ import calendar
 from datetime import datetime
 from datetime import timedelta
 from panda3d.core import Vec3, Vec4, Point3, TextNode, VBase4
+from panda3d.otp import *
 from otp.otpbase import OTPLocalizer
 from direct.gui.DirectGui import DirectFrame, DirectButton, DirectLabel, DirectScrolledList, DirectCheckButton
 from direct.gui import DirectGuiGlobals
@@ -659,7 +660,7 @@ class PartyPlanner(DirectFrame, FSM):
         return invitees
 
     def processAddPartyResponse(self, hostId, errorCode):
-        PartyPlanner.notify.debug('processAddPartyResponse : hostId=%d errorCode=%s' % (hostId, PartyGlobals.AddPartyErrorCode.getString(errorCode)))
+        PartyPlanner.notify.debug('processAddPartyResponse : hostId=%d errorCode=%s' % (hostId, PartyGlobals.AddPartyErrorCode(errorCode).name))
         goingBackAllowed = False
         if errorCode == PartyGlobals.AddPartyErrorCode.AllOk:
             goingBackAllowed = False

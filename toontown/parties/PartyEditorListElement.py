@@ -21,7 +21,7 @@ class PartyEditorListElement(DirectButton):
              (0.0, 0.0, 1.0, 1.0),
              (0.0, 1.0, 1.0, 1.0),
              (0.5, 0.5, 0.5, 1.0))
-            assetName = PartyGlobals.DecorationIds.getString(self.id)
+            assetName = PartyGlobals.DecorationIds(self.id).name
             if assetName == 'Hydra':
                 assetName = 'StageSummer'
             geom = self.partyEditor.decorationModels.find('**/partyDecoration_%s' % assetName)
@@ -49,11 +49,11 @@ class PartyEditorListElement(DirectButton):
              (0.0, 1.0, 0.0, 1.0),
              (1.0, 1.0, 0.0, 1.0),
              (0.5, 0.5, 0.5, 1.0))
-            iconString = PartyGlobals.ActivityIds.getString(self.id)
-            if self.id == PartyGlobals.ActivityIds.PartyJukebox40:
-                iconString = PartyGlobals.ActivityIds.getString(PartyGlobals.ActivityIds.PartyJukebox)
+            iconString = PartyGlobals.ActivityIds(self.id).name
+            if self.id == PartyGlobals.ActivityIds.PartyJukebox40.name:
+                iconString = PartyGlobals.ActivityIds.PartyJukebox.name
             elif self.id == PartyGlobals.ActivityIds.PartyDance20:
-                iconString = PartyGlobals.ActivityIds.getString(PartyGlobals.ActivityIds.PartyDance)
+                iconString = PartyGlobals.ActivityIds.PartyDance.name
             geom = getPartyActivityIcon(self.partyEditor.activityIconsModel, iconString)
             scale = 0.35
             geom3_color = (0.5, 0.5, 0.5, 1.0)
