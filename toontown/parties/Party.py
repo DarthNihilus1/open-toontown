@@ -15,7 +15,6 @@ from toontown.hood import Place
 from toontown.hood import SkyUtil
 from toontown.parties import PartyPlanner
 from toontown.parties.DistributedParty import DistributedParty
-
 class Party(Place.Place):
     notify = DirectNotifyGlobal.directNotify.newCategory('Party')
 
@@ -230,9 +229,9 @@ class Party(Place.Place):
         zoneId = requestStatus['zoneId']
         avId = requestStatus['avId']
         shardId = requestStatus['shardId']
-        if hoodId == ToontownGlobals.PartyHood and zoneId == self.getZoneId() and shardId == None:
+        if hoodId == PartyHood and zoneId == self.getZoneId() and shardId == None:
             self.fsm.request('teleportIn', [requestStatus])
-        elif hoodId == ToontownGlobals.MyEstate:
+        elif hoodId == MyEstate:
             self.doneStatus = requestStatus
             self.getEstateZoneAndGoHome(requestStatus)
         else:

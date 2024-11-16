@@ -1,8 +1,10 @@
 from direct.directnotify import DirectNotifyGlobal
+from direct.distributed.PyDatagram import PyDatagram
 from panda3d.core import *
 from panda3d.toontown import *
 
 from otp.ai.AIZoneData import AIZoneDataStore
+from otp.ai.AIMsgTypes import *
 from otp.ai.TimeManagerAI import TimeManagerAI
 from otp.distributed.OtpDoGlobals import *
 from toontown.ai.HolidayManagerAI import HolidayManagerAI
@@ -506,3 +508,73 @@ class ToontownAIRepository(ToontownInternalRepository):
     def setupFiles(self):
         if not os.path.exists(self.dataFolder):
             os.mkdir(self.dataFolder)
+
+    # From Anesidora 
+    def sendUpdateToDoId(self, dclassName, fieldName, doId, args, channelId=None):
+        """
+        channelId can be used as a recipient if you want to bypass the normal
+        airecv, ownrecv, broadcast, etc.  If you don't include a channelId
+        or if channelId == doId, then the normal broadcast options will
+        be used.
+        
+        See Also: def queryObjectField
+        """
+        dclass=self.dclassesByName.get(dclassName+self.dcSuffix)
+        assert dclass is not None
+        if channelId is None:
+            channelId=doId
+        if dclass is not None:
+            dg = dclass.aiFormatUpdate(
+                    fieldName, doId, channelId, self.ourChannel, args)
+            self.send(dg)
+
+    def createDgUpdateToDoId(self, dclassName, fieldName, doId, args,
+                         channelId=None):
+        """
+        channelId can be used as a recipient if you want to bypass the normal
+        airecv, ownrecv, broadcast, etc.  If you don't include a channelId
+        or if channelId == doId, then the normal broadcast options will
+        be used.
+        
+        This is just like sendUpdateToDoId, but just returns
+        the datagram instead of immediately sending it.
+        """
+        result = None
+        dclass=self.dclassesByName.get(dclassName+self.dcSuffix)
+        assert dclass is not None
+        if channelId is None:
+            channelId=doId
+        if dclass is not None:
+            dg = dclass.aiFormatUpdate(
+                    fieldName, doId, channelId, self.ourChannel, args)
+            result = dg
+        return result
+
+    def sendUpdateToGlobalDoId(self, dclassName, fieldName, doId, args):
+        """
+        Used for sending messages from an AI directly to an
+        uber object.
+        """
+        dclass = self.dclassesByName.get(dclassName)
+        assert dclass, 'dclass %s not found in DC files' % dclassName
+        dg = dclass.aiFormatUpdate(
+            fieldName, doId, doId, self.ourChannel, args)
+        self.send(dg)
+
+    def addPostSocketClose(self, themessage):
+        # Time to send a register for channel message to the msgDirector
+        datagram = PyDatagram()
+#        datagram.addServerControlHeader(CONTROL_ADD_POST_REMOVE)        
+        datagram.addInt8(1)
+        datagram.addChannel(CONTROL_MESSAGE)
+        datagram.addUint16(CONTROL_ADD_POST_REMOVE)
+
+        datagram.addBlob(themessage.getMessage())
+        self.send(datagram)
+
+    def addPostSocketCloseUD(self, dclassName, fieldName, doId, args):
+        dclass = self.dclassesByName.get(dclassName)
+        assert dclass, 'dclass %s not found in DC files' % dclassName
+        dg = dclass.aiFormatUpdate(
+            fieldName, doId, doId, self.ourChannel, args)
+        self.addPostSocketClose(dg)

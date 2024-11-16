@@ -45,3 +45,5 @@ class ToontownUDRepository(ToontownInternalRepository):
         if __astron__:
             # Create our Astron login manager...
             self.astronLoginManager = self.generateGlobalObject(OTP_DO_ID_ASTRON_LOGIN_MANAGER, 'AstronLoginManager')
+            # create our DistributedPartyManagerUD
+            self.partyManager = self.generateGlobalObject(OTP_DO_ID_TOONTOWN_PARTY_MANAGER, 'DistributedPartyManager')
