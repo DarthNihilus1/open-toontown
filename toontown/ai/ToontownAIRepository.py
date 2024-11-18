@@ -47,6 +47,7 @@ from toontown.racing.DistributedViewPadAI import DistributedViewPadAI
 from toontown.racing.RaceManagerAI import RaceManagerAI
 from toontown.uberdog.DistributedPartyManagerAI import DistributedPartyManagerAI
 from toontown.safezone.SafeZoneManagerAI import SafeZoneManagerAI
+from toontown.safezone import DistributedPartyGateAI
 from toontown.shtiker.CogPageManagerAI import CogPageManagerAI
 from toontown.spellbook.ToontownMagicWordManagerAI import ToontownMagicWordManagerAI
 from toontown.suit.SuitInvasionManagerAI import SuitInvasionManagerAI
@@ -408,7 +409,24 @@ class ToontownAIRepository(ToontownInternalRepository):
         return []  # TODO
 
     def findPartyHats(self, dnaData, zoneId):
-        return []  # TODO
+        partyHats = []
+        if 'party_gate' in dnaData.getName():
+            x, y, z = dnaData.getPos()
+            h, p, r = dnaData.getHpr()
+            partyHat = DistributedPartyGateAI.DistributedPartyGateAI(self)
+            partyHat.generateWithRequired(zoneId)
+            partyHats.append(partyHat)
+        else:
+            if isinstance(dnaData, DNAVisGroup):
+                name = dnaData.getName()
+                visId = int(name.split(":", 1)[0]) % 1000
+                zoneId = ZoneUtil.getHoodId(zoneId) + visId
+
+        for i in range(dnaData.getNumChildren()):
+            foundPartyHats = self.findPartyHats(dnaData.at(i), zoneId)
+            partyHats.extend(foundPartyHats)
+
+        return partyHats
 
     def findRacingPads(self, dnaData, zoneId, area, type='racing_pad', overrideDNAZone=False):
         kartPads, kartPadGroups = [], []
