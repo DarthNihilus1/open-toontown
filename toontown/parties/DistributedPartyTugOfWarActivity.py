@@ -329,7 +329,8 @@ class DistributedPartyTugOfWarActivity(DistributedPartyTeamActivity):
 
     def __enableCollisions(self):
         for i in range(len(PartyGlobals.TeamActivityTeams)):
-            self.accept('enterTugOfWarJoinCollision%d' % i, getattr(self, '_join%s' % PartyGlobals.TeamActivityTeams.getString(i)))
+            teamName = PartyGlobals.TeamActivityTeams(i).name
+            self.accept(f'enterTugOfWarJoinCollision{i}', getattr(self, f'_join{teamName}'))
 
     def __disableCollisions(self):
         for i in range(len(PartyGlobals.TeamActivityTeams)):
@@ -662,7 +663,7 @@ class DistributedPartyTugOfWarActivity(DistributedPartyTeamActivity):
                     self.sendUpdate('reportFallIn', [losingTeam])
 
     def throwTeamInWater(self, losingTeam):
-        self.notify.debug('throwTeamInWater( %s )' % PartyGlobals.TeamActivityTeams.getString(losingTeam))
+        self.notify.debug('throwTeamInWater( %s )' % PartyGlobals.TeamActivityTeams(losingTeam))
         splashSet = False
         for toonId in self.toonIds[losingTeam]:
             self.fallenToons.append(toonId)

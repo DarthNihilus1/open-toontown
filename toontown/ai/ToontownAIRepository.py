@@ -1,3 +1,4 @@
+import time
 from direct.directnotify import DirectNotifyGlobal
 from direct.distributed.PyDatagram import PyDatagram
 from panda3d.core import *
@@ -35,6 +36,7 @@ from toontown.hood.LawbotHQDataAI import LawbotHQDataAI
 from toontown.hood.MMHoodDataAI import MMHoodDataAI
 from toontown.hood.OZHoodDataAI import OZHoodDataAI
 from toontown.hood.TTHoodDataAI import TTHoodDataAI
+from toontown.parties.ToontownTimeManager import ToontownTimeManager
 from toontown.pets.PetManagerAI import PetManagerAI
 from toontown.quest.QuestManagerAI import QuestManagerAI
 from toontown.racing import RaceGlobals
@@ -184,6 +186,11 @@ class ToontownAIRepository(ToontownInternalRepository):
 
         # Create our Cog suit manager...
         self.cogSuitMgr = CogSuitManagerAI(self)
+
+        # Create our Toontown time manager...
+        self.toontownTimeManager = ToontownTimeManager()
+        self.toontownTimeManager.updateLoginTimes(time.time(), time.time(), globalClock.getRealTime())
+
 
     def createGlobals(self):
         """
