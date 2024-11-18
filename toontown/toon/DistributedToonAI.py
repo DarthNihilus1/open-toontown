@@ -3973,6 +3973,9 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
                 partyInfo.status = PartyGlobals.PartyStatus.CanStart
                 found = True
                 break
+            else:
+                self.notify.info('setPartyCanStart partyId does not match partyId in hostedParties %s' % partyId)
+                print(self.hostedParties)
 
         if not found:
             self.notify.warning("setPartyCanStart can't find partyId %s" % partyId)

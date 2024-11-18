@@ -44,10 +44,16 @@ class PartyDb:
         with open(self.partyDbFilePath, 'w') as file:
             json.dump(self.partyToId, file)
 
+    def load(self):
+        """Load the current state of the partyToId dictionary from the JSON file."""
+        with open(self.partyDbFilePath, 'r') as file:
+            self.partyToId = json.load(file)
+
     def putParty(self, hostId, startTime, endTime, isPrivate, inviteTheme, activities, decorations, status):
         """
         Add a party to the database.
         """
+        self.load()
         partyId = len(self.partyToId) + 1  # Generate a new party ID
         party = {
             'partyId': partyId,
@@ -58,7 +64,7 @@ class PartyDb:
             'inviteTheme': inviteTheme,
             'activities': activities,
             'decorations': decorations,
-            'status': status
+            'statusId': status
         }
         self.partyToId[partyId] = party
         self.save()
@@ -69,6 +75,7 @@ class PartyDb:
         """
         Get all parties of a host.
         """
+        self.load()
         for party in self.partyToId.values():
             if party['hostId'] == hostId:
                 yield party
@@ -78,16 +85,18 @@ class PartyDb:
         """
         Get all parties of a host that can start.
         """
+        self.load()
         for party in self.partyToId.values():
-            if party['hostId'] == hostId and party['status'] == PartyGlobals.PartyStatus.Pending:
+            if party['hostId'] == hostId and party['statusId'] == PartyGlobals.PartyStatus.Pending:
                 yield party
 
     def getPartiesAvailableToStart(self, thresholdTime):
         """
         Get all parties that can start.
         """
+        self.load()
         for party in self.partyToId.values():
-            if party['startTime'] <= thresholdTime and party['status'] == PartyGlobals.PartyStatus.Pending:
+            if party['startTime'] <= thresholdTime and party['statusId'] == PartyGlobals.PartyStatus.Pending:
                 yield party
 
     def getPrioritizedParties(self, partyIds, thresholdTime, limit, future, cancelled):
@@ -102,23 +111,24 @@ class PartyDb:
 
         Returns a list of partyInfo dictionaries.
         """
+        self.load()
         for partyId in partyIds:
             party = self.partyToId[partyId]
             if future:
-                if party['startTime'] > thresholdTime:
+                if party['startTime'] >= thresholdTime:
                     if not cancelled:
-                        if party['status'] == PartyGlobals.PartyStatus.Pending:
+                        if party['statusId'] == PartyGlobals.PartyStatus.Pending:
                             yield party
                     else:
-                        if party['status'] == PartyGlobals.PartyStatus.Cancelled:
+                        if party['statuId'] == PartyGlobals.PartyStatus.Cancelled:
                             yield party
             else:
                 if party['startTime'] < thresholdTime:
                     if not cancelled:
-                        if party['status'] == PartyGlobals.PartyStatus.Finished:
+                        if party['statusId'] == PartyGlobals.PartyStatus.Finished:
                             yield party
                     else:
-                        if party['status'] == PartyGlobals.PartyStatus.Cancelled:
+                        if party['statusId'] == PartyGlobals.PartyStatus.Cancelled:
                             yield party
 
 
@@ -134,23 +144,24 @@ class PartyDb:
 
         Returns a list of partyInfo dictionaries.
         """
+        self.load()
         for party in self.partyToId.values():
             if party['hostId'] == hostId:
                 if future:
-                    if party['startTime'] > thresholdTime:
+                    if party['startTime'] >= thresholdTime:
                         if not cancelled:
-                            if party['status'] == PartyGlobals.PartyStatus.Pending:
+                            if party['statusId'] == PartyGlobals.PartyStatus.Pending:
                                 yield party
                         else:
-                            if party['status'] == PartyGlobals.PartyStatus.Cancelled:
+                            if party['statusId'] == PartyGlobals.PartyStatus.Cancelled:
                                 yield party
                 else:
                     if party['startTime'] < thresholdTime:
                         if not cancelled:
-                            if party['status'] == PartyGlobals.PartyStatus.Finished:
+                            if party['statusId'] == PartyGlobals.PartyStatus.Finished:
                                 yield party
                         else:
-                            if party['status'] == PartyGlobals.PartyStatus.Cancelled:
+                            if party['statusId'] == PartyGlobals.PartyStatus.Cancelled:
                                 yield party
 
 
@@ -158,12 +169,14 @@ class PartyDb:
         """
         Get a party by partyId.
         """
+        self.load()
         return self.partyToId.get(partyId, None)
     
     def changePrivate(self, partyId, newPrivateStatus):
         """
         Change a party to public or private.
         """
+        self.load()
         if partyId in self.partyToId.values():
             self.partyToId[partyId]['isPrivate'] = newPrivateStatus
             self.save()
@@ -174,6 +187,7 @@ class PartyDb:
         """
         Delete a party.
         """
+        self.load()
         if partyId in self.partyToId.values():
             del self.partyToId[partyId]
             self.save()
@@ -184,8 +198,9 @@ class PartyDb:
         """
         Change the status of a party.
         """
+        self.load()
         if partyId in self.partyToId.values():
-            self.partyToId[partyId]['status'] = newPartyStatus
+            self.partyToId[partyId]['statusId'] = newPartyStatus
             self.save()
             return True
         return False
@@ -194,24 +209,27 @@ class PartyDb:
         """
         Force finish all started parties.
         """
+        self.load()
         for party in self.partyToId.values():
-            if party['startTime'] < thresholdTime and party['status'] == PartyGlobals.PartyStatus.Started.name:
-                party['status'] = PartyGlobals.PartyStatus.Finished.name
+            if party['endTime'] < thresholdTime and party['statusId'] == PartyGlobals.PartyStatus.Started:
+                party['statusId'] = PartyGlobals.PartyStatus.Finished
         self.save()
 
     def forceNeverStartedForCanStart(self, thresholdTime):
         """
         Force never started all parties that can start.
         """
+        self.load()
         for party in self.partyToId.values():
-            if party['startTime'] <= thresholdTime and party['status'] == PartyGlobals.PartyStatus.Pending:
-                party['status'] = PartyGlobals.PartyStatus.NeverStarted
+            if party['endTime'] < thresholdTime and party['statusId'] == PartyGlobals.PartyStatus.Pending:
+                party['statusId'] = PartyGlobals.PartyStatus.NeverStarted
         self.save()
 
     def getMultipleParties(self, partyIds):
         """
         Get multiple parties by partyId.
         """
+        self.load()
         for partyId in partyIds:
             yield self.partyToId.get(partyId, None)
             
@@ -219,9 +237,10 @@ class PartyDb:
         """
         Change the status of multiple parties.
         """
+        self.load()
         for partyId in partyIds:
             if partyId in self.partyToId.values():
-                self.partyToId[partyId]['status'] = newPartyStatus
+                self.partyToId[partyId]['statusId'] = newPartyStatus
         self.save()
 
 class InviteDB():
@@ -255,7 +274,7 @@ class InviteDB():
             'inviteKey': inviteKey,
             'partyId': partyId,
             'inviteeId': inviteeId,
-            'status': PartyGlobals.InviteStatus.NotRead
+            'statusId': PartyGlobals.InviteStatus.NotRead
         }
         self.inviteToId[inviteKey] = invite
         self.save()
@@ -279,7 +298,7 @@ class InviteDB():
         Update the status of an invite.
         """
         if inviteKey in self.inviteToId:
-            self.inviteToId[inviteKey]['status'] = newStatus
+            self.inviteToId[inviteKey]['statusId'] = newStatus
             self.save()
             return True
         return False
@@ -384,8 +403,8 @@ class DistributedPartyManagerUD(DistributedObjectGlobalUD):
 
     def addParty(self, pmDoId, hostId, startTime, endTime, isPrivate, inviteTheme, activities, decorations, inviteeIds, costOfParty):
         """Add a party to the the invite and party dbs."""
-        DistributedPartyManagerUD.notify.debug( "addParty( hostId=%d, startTime=%s, endTime=%s, isPrivate=%s, inviteTheme=%s, invitees=%s... )" %(hostId, startTime, endTime, isPrivate, PartyGlobals.InviteTheme(inviteTheme)._name_ ,str(inviteeIds))  )
-        putSucceeded = self.partyDb.putParty(hostId, startTime, endTime, isPrivate, inviteTheme, activities, decorations, PartyGlobals.PartyStatus.Pending.name)
+        DistributedPartyManagerUD.notify.info( "addParty( hostId=%d, startTime=%s, endTime=%s, isPrivate=%s, inviteTheme=%s, invitees=%s... )" %(hostId, startTime, endTime, isPrivate, PartyGlobals.InviteTheme(inviteTheme)._name_ ,str(inviteeIds))  ) 
+        putSucceeded = self.partyDb.putParty(hostId, startTime, endTime, isPrivate, inviteTheme, activities, decorations, PartyGlobals.PartyStatus.Pending)
         if not putSucceeded:
             DistributedPartyManagerUD.notify.warning( "putParty call for party with hostID %s failed." % hostId )
             # TODO having too many parties is not the only reason putParty can fail
@@ -395,7 +414,7 @@ class DistributedPartyManagerUD(DistributedObjectGlobalUD):
             return
 
         errorCode = PartyGlobals.AddPartyErrorCode.AllOk
-        partiesTuple = list(self.partyDb.getPartiesOfHost(hostId))
+        partiesTuple = tuple(self.partyDb.getPartiesOfHost(hostId))
         if len(partiesTuple) > 0:
             partyId = partiesTuple[-1]['partyId'] # TODO-parties: is getting the -1 index guranteed to get the party we just pushed to the database?
             # send out the details of the parties he's hosting
@@ -676,26 +695,65 @@ class DistributedPartyManagerUD(DistributedObjectGlobalUD):
         return thresholdTime
 
     def getFormattedPartyInfo(self, partyInfoDict):
+        """
+        Formats the party information from the given dictionary into a tuple.
+        Args:
+            partyInfoDict (dict): A dictionary containing party information with the following keys:
+                - 'partyId' (int): The ID of the party.
+                - 'hostId' (int): The ID of the host.
+                - 'startTime' (str): The start time of the party.
+                - 'endTime' (str): The end time of the party.
+                - 'activities' (tuple): The activities of the party.
+                - 'decorations' (tuple): The decorations of the party.
+                - 'isPrivate' (bool): A boolean indicating if the party is private.
+                - 'inviteTheme' (int): The theme of the invitation.
+                - 'statusId' (int): The status ID of the party.
+        Returns:
+            tuple: A tuple containing the formatted party information in the following order:
+                - partyId (int)
+                - hostId (int)
+                - startTime year (int)
+                - startTime month (int)
+                - startTime day (int)
+                - startTime hour (int)
+                - startTime minute (int)
+                - endTime year (int)
+                - endTime month (int)
+                - endTime day (int)
+                - endTime hour (int)
+                - endTime minute (int)
+                - isPrivate (bool)
+                - inviteTheme (int)
+                - formattedActivities (list of tuples): Each tuple contains 4 integers representing an activity.
+                - formattedDecors (list of tuples): Each tuple contains 4 integers representing a decoration.
+                - statusId (int)
+        """
         startTime = partyInfoDict['startTime']
         endTime = partyInfoDict['endTime']
-        activitiesStr = partyInfoDict['activities'].decode()
-        formattedActivities = []
-        for i in range (int(len(activitiesStr) / 4)):
-            oneActivity = (ord(activitiesStr[i*4]),
-                           ord(activitiesStr[i*4 + 1]),
-                           ord(activitiesStr[i*4 + 2]),
-                           ord(activitiesStr[i*4 + 3])
-                           )
-            formattedActivities.append(oneActivity)
-        decorStr = partyInfoDict['decorations']
-        formattedDecors = []
-        for i in range(int(len(decorStr) / 4)):
-            oneDecor = (ord(decorStr[i*4]),
-                        ord(decorStr[i*4 + 1]),
-                        ord(decorStr[i*4 + 2]),
-                        ord(decorStr[i*4 + 3])
-                        )
-            formattedDecors.append(oneDecor)
+        # convert the date strings to datetime 
+        startTime = datetime.strptime(startTime, "%Y-%m-%d %H:%M:%S")
+        endTime = datetime.strptime(endTime, "%Y-%m-%d %H:%M:%S")
+        activities = partyInfoDict['activities']
+        formattedActivities = [tuple(activity) for activity in activities]
+        
+        # for i in range (int(len(activitiesStr) / 4)):
+        #     oneActivity = (ord(activitiesStr[i*4]),
+        #                    ord(activitiesStr[i*4 + 1]),
+        #                    ord(activitiesStr[i*4 + 2]),
+        #                    ord(activitiesStr[i*4 + 3])
+        #                    )
+        #     formattedActivities.append(oneActivity)
+        # decorStr = partyInfoDict['decorations']
+        # formattedDecors = []
+        # for i in range(int(len(decorStr) / 4)):
+        #     oneDecor = (ord(decorStr[i*4]),
+        #                 ord(decorStr[i*4 + 1]),
+        #                 ord(decorStr[i*4 + 2]),
+        #                 ord(decorStr[i*4 + 3])
+        #                 )
+        #     formattedDecors.append(oneDecor)
+        decorations = partyInfoDict['decorations']
+        formattedDecors = [tuple(decor) for decor in decorations]
         isPrivate = partyInfoDict['isPrivate']
         inviteTheme = partyInfoDict['inviteTheme']
 
@@ -928,7 +986,7 @@ class DistributedPartyManagerUD(DistributedObjectGlobalUD):
             return errorCode
         partyDict = party[0]
         # Check to see if this is a party that has finished
-        if partyDict["statusId"] == PartyGlobals.PartyStatus.Started and newPartyStatus == PartyGlobals.PartyStatus.Finished:
+        if partyDict["statusId"] == PartyGlobals.PartyStatus.Started.value and newPartyStatus == PartyGlobals.PartyStatus.Finished.value:
             # It's over, send word to all the AIs so they can update for their public party gates
             if partyDict["hostId"] in self.hostAvIdToAllPartiesInfo:
                 self.sendUpdateToAllAis("partyHasFinishedUdToAllAi", [partyDict["hostId"]])
@@ -954,12 +1012,12 @@ class DistributedPartyManagerUD(DistributedObjectGlobalUD):
         DistributedPartyManagerUD.notify.debug( "partyInfoOfHostRequestAiToUd( pmDoId=%d, hostId=%d )" %(pmDoId, hostId) )
 
         # Query the database, get the info!
-        hostedParties = list(self.partyDb.getPartiesOfHostThatCanStart(hostId))
+        hostedParties = tuple(self.partyDb.getPartiesOfHostThatCanStart(hostId))
 
         partyFail = False
         partyInfo = None
         if len(hostedParties) == 0:
-            DistributedPartyManagerUD.notify.debug( "partyInfoOfHostRequestAiToUd : party failed because avatar is not hosting any parties." )
+            DistributedPartyManagerUD.notify.info( "partyInfoOfHostRequestAiToUd : party failed because avatar is not hosting any parties." )
             partyFail = True
         else:
             curServerDateTime = self.air.toontownTimeManager.getCurServerDateTime()
@@ -969,6 +1027,8 @@ class DistributedPartyManagerUD(DistributedObjectGlobalUD):
             #       time offsets by creating a new datetime based on it but
             #       using the ToontownTimeManager's serverTimeZone info
             partyStartTime = partyInfoDict["startTime"]
+            # convert string of datetime to datetime
+            partyStartTime = datetime.strptime(partyStartTime, "%Y-%m-%d %H:%M:%S")
             partyStartTime = datetime(
                 partyStartTime.year,
                 partyStartTime.month,
@@ -993,6 +1053,8 @@ class DistributedPartyManagerUD(DistributedObjectGlobalUD):
                 partyFail = True
 
             partyEndTime = partyInfoDict["endTime"]
+            # convert string of datetime to datetime
+            partyEndTime = datetime.strptime(partyEndTime, "%Y-%m-%d %H:%M:%S")
             partyEndTime = datetime(
                 partyEndTime.year,
                 partyEndTime.month,
@@ -1076,11 +1138,11 @@ class DistributedPartyManagerUD(DistributedObjectGlobalUD):
         # first mark as never started parties who went past the end time
         self.forceNeverStartedForCanStart()
 
-        partiesStartingTuples = self.partyDb.getPartiesAvailableToStart(curServerDateTime.strftime("%Y-%m-%d %H:%M:%S"))
+        partiesStartingTuples = tuple(self.partyDb.getPartiesAvailableToStart(curServerDateTime.strftime("%Y-%m-%d %H:%M:%S")))
         # Now we know the partyIds and hostIds of parties that can start, let's
         # send those directly out to the DistributedToons who can use them!
         for infoDict in partiesStartingTuples:
-            self.notify.debug('%d can start party %d' % (infoDict['hostId'], infoDict['partyId']))
+            self.notify.debug('%d can   %d' % (infoDict['hostId'], infoDict['partyId']))
             self.air.sendUpdateToDoId(
                 "DistributedToon",
                 "setPartyCanStart",
@@ -1163,7 +1225,7 @@ class DistributedPartyManagerUD(DistributedObjectGlobalUD):
         gates.
         """
         DistributedPartyManagerUD.notify.debug("partyHasStartedAiToUd : pmDoId=%s partyId=%s shardId=%s zoneId=%s hostName=%s " % (pmDoId, partyId, shardId, zoneId, hostName))
-        errorCode = self.changePartyStatusRequestAiToUd(pmDoId, partyId, PartyGlobals.PartyStatus.Started.name)
+        errorCode = self.changePartyStatusRequestAiToUd(pmDoId, partyId, PartyGlobals.PartyStatus.Started)
         if errorCode != PartyGlobals.ChangePartyFieldErrorCode.AllOk:
             return
         party = self.partyDb.getParty(partyId)
@@ -1250,7 +1312,7 @@ class DistributedPartyManagerUD(DistributedObjectGlobalUD):
         # TODO is it possible for a toon to get back online before we hit this point?
         # Currently if the current server time is past party end time, he is SOL and can't start a party
         curServerTime = self.air.toontownTimeManager.getCurServerDateTime()
-        interruptedInfo = list(self.partyDb.getMultipleParties(interruptedParties))
+        interruptedInfo = tuple(self.partyDb.getMultipleParties(interruptedParties))
         for info in interruptedInfo:
             endTime = info["endTime"]
             endTime = datetime(

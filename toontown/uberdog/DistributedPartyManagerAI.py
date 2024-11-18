@@ -203,7 +203,7 @@ class DistributedPartyManagerAI(DistributedObjectAI):
                                     (hostId, PartyGlobals.ActivityIds(activityTuple[0]).name))
                 if not self.allowUnreleasedServer():
                     return (False, "Activity %s is not released" %
-                            PartyGlobals.ActivityIds.get[[0]])
+                            PartyGlobals.ActivityIds.get[[0]].name)
 
             # check if the grid squares are valid
             gridSize = PartyGlobals.ActivityInformationDict[activityId]["gridsize"]
@@ -1391,3 +1391,11 @@ class DistributedPartyManagerAI(DistributedObjectAI):
         # prevent mem leak
         # as far as I can tell we don't need this, ~aigarbage reports 0 cycles
         # toon.patchDelete()
+
+
+    def getHostId(self, partyId):
+        # grab the host id from the party id
+        for hostId, party in self.hostAvIdToPartiesRunning.items():
+            if party.partyInfo.partyId == partyId:
+                return hostId
+            
