@@ -26,7 +26,7 @@ try:
     launcher
 except:
     if __debug__:
-        loadPrcFile('config/Configrc.prc')
+        loadPrcFile('etc/Configrc.prc')
 
     from toontown.launcher.ToontownDummyLauncher import ToontownDummyLauncher
     launcher = ToontownDummyLauncher()

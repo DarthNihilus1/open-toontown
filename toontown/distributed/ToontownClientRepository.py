@@ -63,6 +63,7 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         self.toons = {}
         if self.http.getVerifySsl() != HTTPClient.VSNoVerify:
             self.http.setVerifySsl(HTTPClient.VSNoDateCheck)
+        #prepareAvatar(self.http)
         self.__forbidCheesyEffects = 0
         self.friendManager = None
         self.speedchatRelay = None
@@ -159,12 +160,16 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         del self.okButton
         del self.acceptedText
         del self.acceptedBanner
-        datagram = PyDatagram()
-        datagram.addUint16(CLIENT_SET_WISHNAME_CLEAR)
-        datagram.addUint32(avatarChoice.id)
-        datagram.addUint8(1)
-        self.send(datagram)
-        self.loginFSM.request('waitForSetAvatarResponse', [avatarChoice])
+        if not __astron__:
+            datagram = PyDatagram()
+            datagram.addUint16(CLIENT_SET_WISHNAME_CLEAR)
+            datagram.addUint32(avatarChoice.id)
+            datagram.addUint8(1)
+            self.send(datagram)
+            self.loginFSM.request('waitForSetAvatarResponse', [avatarChoice])
+        else:
+            self.astronLoginManager.sendAcknowledgeAvatarName(avatarChoice.id,
+                                                              lambda: self.loginFSM.request('waitForSetAvatarResponse', [avatarChoice]))
 
     def betterlucknexttime(self, avList, index):
         self.rejectDoneEvent = 'rejectDone'
@@ -175,8 +180,9 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
 
     def __handleReject(self, avList, index):
         self.rejectDialog.cleanup()
-        datagram = PyDatagram()
-        datagram.addUint16(CLIENT_SET_WISHNAME_CLEAR)
+        if not __astron__:
+            datagram = PyDatagram()
+            datagram.addUint16(CLIENT_SET_WISHNAME_CLEAR)
         avid = 0
         for k in avList:
             if k.position == index:
@@ -184,10 +190,13 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
 
         if avid == 0:
             self.notify.error('Avatar rejected not found in avList.  Index is: ' + str(index))
-        datagram.addUint32(avid)
-        datagram.addUint8(0)
-        self.send(datagram)
-        self.loginFSM.request('waitForAvatarList')
+        if not __astron__:
+            datagram.addUint32(avid)
+            datagram.addUint8(0)
+            self.send(datagram)
+            self.loginFSM.request('waitForAvatarList')
+        else:
+            self.astronLoginManager.sendAcknowledgeAvatarName(avid, lambda: self.loginFSM.request('waitForAvatarList'))
 
     def enterChooseAvatar(self, avList):
         ModelPool.garbageCollect()
@@ -294,7 +303,8 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         self.avCreate = MakeAToon.MakeAToon(self.loginFSM, avList, 'makeAToonComplete', index, self.isPaid())
         self.avCreate.load()
         self.avCreate.enter()
-        self.handler = self.handleCreateAvatar
+        if not __astron__:
+            self.handler = self.handleCreateAvatar
         self.accept('makeAToonComplete', self.__handleMakeAToon, [avList, index])
         self.accept('nameShopCreateAvatar', self.sendCreateAvatarMsg)
         self.accept('nameShopPost', self.relayMessage)
@@ -341,11 +351,38 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
             del self.newPotAv
         return
 
-    def handleAvatarResponseMsg(self, di):
-        self.cleanupWaitingForDatabase()
-        avatarId = di.getUint32()
-        returnCode = di.getUint8()
-        if returnCode == 0:
+    if not __astron__:
+        def handleAvatarResponseMsg(self, di):
+            self.cleanupWaitingForDatabase()
+            avatarId = di.getUint32()
+            returnCode = di.getUint8()
+            if returnCode == 0:
+                dclass = self.dclassesByName['DistributedToon']
+                NametagGlobals.setMasterArrowsOn(0)
+                loader.beginBulkLoad('localAvatarPlayGame', OTPLocalizer.CREnteringToontown, 400, 1, TTLocalizer.TIP_GENERAL)
+                localAvatar = LocalToon.LocalToon(self)
+                localAvatar.dclass = dclass
+                base.localAvatar = localAvatar
+                __builtins__['localAvatar'] = base.localAvatar
+                NametagGlobals.setToon(base.localAvatar)
+                localAvatar.doId = avatarId
+                self.localAvatarDoId = avatarId
+                parentId = None
+                zoneId = None
+                localAvatar.setLocation(parentId, zoneId)
+                localAvatar.generateInit()
+                localAvatar.generate()
+                localAvatar.updateAllRequiredFields(dclass, di)
+                self.doId2do[avatarId] = localAvatar
+                localAvatar.initInterface()
+                self.sendGetFriendsListRequest()
+                self.loginFSM.request('playingGame')
+            else:
+                self.notify.error('Bad avatar: return code %d' % returnCode)
+            return
+    else:
+        def handleAvatarResponseMsg(self, avatarId, di):
+            self.cleanupWaitingForDatabase()
             dclass = self.dclassesByName['DistributedToon']
             NametagGlobals.setMasterArrowsOn(0)
             loader.beginBulkLoad('localAvatarPlayGame', OTPLocalizer.CREnteringToontown, 400, 1, TTLocalizer.TIP_GENERAL)
@@ -361,14 +398,13 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
             localAvatar.setLocation(parentId, zoneId)
             localAvatar.generateInit()
             localAvatar.generate()
-            localAvatar.updateAllRequiredFields(dclass, di)
+            dclass.receiveUpdateBroadcastRequiredOwner(localAvatar, di)
+            localAvatar.announceGenerate()
+            localAvatar.postGenerateMessage()
             self.doId2do[avatarId] = localAvatar
             localAvatar.initInterface()
             self.sendGetFriendsListRequest()
             self.loginFSM.request('playingGame')
-        else:
-            self.notify.error('Bad avatar: return code %d' % returnCode)
-        return
 
     def getAvatarDetails(self, avatar, func, *args):
         pad = ScratchPad()
@@ -470,7 +506,8 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         self.handlerArgs = {'hoodId': hoodId,
          'zoneId': zoneId,
          'avId': avId}
-        self.handler = self.handleTutorialQuestion
+        if not __astron__:
+            self.handler = self.handleTutorialQuestion
         self.__requestSkipTutorial(hoodId, zoneId, avId)
 
     def __requestSkipTutorial(self, hoodId, zoneId, avId):
@@ -497,7 +534,8 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         return
 
     def enterTutorialQuestion(self, hoodId, zoneId, avId):
-        self.handler = self.handleTutorialQuestion
+        if not __astron__:
+            self.handler = self.handleTutorialQuestion
         self.__requestTutorial(hoodId, zoneId, avId)
 
     def handleTutorialQuestion(self, msgType, di):
@@ -556,23 +594,42 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         self.handler = self.handleCloseShard
         self._removeLocalAvFromStateServer()
 
-    def handleCloseShard(self, msgType, di):
-        if msgType == CLIENT_CREATE_OBJECT_REQUIRED:
-            di2 = PyDatagramIterator(di)
-            parentId = di2.getUint32()
-            if self._doIdIsOnCurrentShard(parentId):
-                return
-        elif msgType == CLIENT_CREATE_OBJECT_REQUIRED_OTHER:
-            di2 = PyDatagramIterator(di)
-            parentId = di2.getUint32()
-            if self._doIdIsOnCurrentShard(parentId):
-                return
-        elif msgType == CLIENT_OBJECT_UPDATE_FIELD:
-            di2 = PyDatagramIterator(di)
-            doId = di2.getUint32()
-            if self._doIdIsOnCurrentShard(doId):
-                return
-        self.handleMessageType(msgType, di)
+    if not __astron__:
+        def handleCloseShard(self, msgType, di):
+            if msgType == CLIENT_CREATE_OBJECT_REQUIRED:
+                di2 = PyDatagramIterator(di)
+                parentId = di2.getUint32()
+                if self._doIdIsOnCurrentShard(parentId):
+                    return
+            elif msgType == CLIENT_CREATE_OBJECT_REQUIRED_OTHER:
+                di2 = PyDatagramIterator(di)
+                parentId = di2.getUint32()
+                if self._doIdIsOnCurrentShard(parentId):
+                    return
+            elif msgType == CLIENT_OBJECT_UPDATE_FIELD:
+                di2 = PyDatagramIterator(di)
+                doId = di2.getUint32()
+                if self._doIdIsOnCurrentShard(doId):
+                    return
+            self.handleMessageType(msgType, di)
+    else:
+        def handleCloseShard(self, msgType, di):
+            if msgType == CLIENT_ENTER_OBJECT_REQUIRED:
+                di2 = PyDatagramIterator(di)
+                parentId = di2.getUint32()
+                if self._doIdIsOnCurrentShard(parentId):
+                    return
+            elif msgType == CLIENT_ENTER_OBJECT_REQUIRED_OTHER:
+                di2 = PyDatagramIterator(di)
+                parentId = di2.getUint32()
+                if self._doIdIsOnCurrentShard(parentId):
+                    return
+            elif msgType == CLIENT_OBJECT_SET_FIELD:
+                di2 = PyDatagramIterator(di)
+                doId = di2.getUint32()
+                if self._doIdIsOnCurrentShard(doId):
+                    return
+            self.handleMessageType(msgType, di)
 
     def _logFailedDisable(self, doId, ownerView):
         if doId not in self.doId2do and doId in self._deletedSubShardDoIds:
@@ -796,11 +853,14 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         self.friendsListError = 0
 
     def sendGetFriendsListRequest(self):
-        self.friendsMapPending = 1
-        self.friendsListError = 0
-        datagram = PyDatagram()
-        datagram.addUint16(CLIENT_GET_FRIEND_LIST)
-        self.send(datagram)
+        if __astron__:
+            print('sendGetFriendsListRequest TODO')
+        else:
+            self.friendsMapPending = 1
+            self.friendsListError = 0
+            datagram = PyDatagram()
+            datagram.addUint16(CLIENT_GET_FRIEND_LIST)
+            self.send(datagram)
 
     def cleanPetsFromFriendsMap(self):
         for objId, obj in list(self.friendsMap.items()):
@@ -1033,29 +1093,64 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         return True
 
     def sendQuietZoneRequest(self):
-        self.sendSetZoneMsg(OTPGlobals.QuietZone)
+        if __astron__:
+            self.sendSetZoneMsg(OTPGlobals.QuietZone, [])
+        else:
+            self.sendSetZoneMsg(OTPGlobals.QuietZone)
 
-    def handleQuietZoneGenerateWithRequired(self, di):
-        parentId = di.getUint32()
-        zoneId = di.getUint32()
-        classId = di.getUint16()
-        doId = di.getUint32()
-        dclass = self.dclassesByNumber[classId]
-        if dclass.getClassDef().neverDisable:
-            dclass.startGenerate()
-            distObj = self.generateWithRequiredFields(dclass, doId, di, parentId, zoneId)
-            dclass.stopGenerate()
+    if not __astron__:
+        def handleQuietZoneGenerateWithRequired(self, di):
+            parentId = di.getUint32()
+            zoneId = di.getUint32()
+            classId = di.getUint16()
+            doId = di.getUint32()
+            dclass = self.dclassesByNumber[classId]
+            if dclass.getClassDef().neverDisable:
+                dclass.startGenerate()
+                distObj = self.generateWithRequiredFields(dclass, doId, di, parentId, zoneId)
+                dclass.stopGenerate()
 
-    def handleQuietZoneGenerateWithRequiredOther(self, di):
-        parentId = di.getUint32()
-        zoneId = di.getUint32()
-        classId = di.getUint16()
-        doId = di.getUint32()
-        dclass = self.dclassesByNumber[classId]
-        if dclass.getClassDef().neverDisable:
-            dclass.startGenerate()
-            distObj = self.generateWithRequiredOtherFields(dclass, doId, di, parentId, zoneId)
-            dclass.stopGenerate()
+        def handleQuietZoneGenerateWithRequiredOther(self, di):
+            parentId = di.getUint32()
+            zoneId = di.getUint32()
+            classId = di.getUint16()
+            doId = di.getUint32()
+            dclass = self.dclassesByNumber[classId]
+            if dclass.getClassDef().neverDisable:
+                dclass.startGenerate()
+                distObj = self.generateWithRequiredOtherFields(dclass, doId, di, parentId, zoneId)
+                dclass.stopGenerate()
+    else:
+        def handleQuietZoneGenerateWithRequired(self, di):
+            doId = di.getUint32()
+            parentId = di.getUint32()
+            zoneId = di.getUint32()
+            classId = di.getUint16()
+            dclass = self.dclassesByNumber[classId]
+            if dclass.getClassDef().neverDisable:
+                dclass.startGenerate()
+                distObj = self.generateWithRequiredFields(dclass, doId, di, parentId, zoneId)
+                dclass.stopGenerate()
+
+        def handleQuietZoneGenerateWithRequiredOther(self, di):
+            doId = di.getUint32()
+            parentId = di.getUint32()
+            zoneId = di.getUint32()
+            classId = di.getUint16()
+            dclass = self.dclassesByNumber[classId]
+            if dclass.getClassDef().neverDisable:
+                dclass.startGenerate()
+                distObj = self.generateWithRequiredOtherFields(dclass, doId, di, parentId, zoneId)
+                dclass.stopGenerate()
+
+        def handleGenerateWithRequiredOtherOwner(self, di):
+            # OwnerViews are only used for LocalToon in Toontown.
+            if self.loginFSM.getCurrentState().getName() == 'waitForSetAvatarResponse':
+                doId = di.getUint32()
+                parentId = di.getUint32()
+                zoneId = di.getUint32()
+                classId = di.getUint16()
+                self.handleAvatarResponseMsg(doId, di)
 
     def handleQuietZoneUpdateField(self, di):
         di2 = DatagramIterator(di)

@@ -1,20 +1,22 @@
 from direct.directnotify import DirectNotifyGlobal
-from direct.distributed.ConnectionRepository import ConnectionRepository
+from direct.distributed.AstronInternalRepository import AstronInternalRepository
 from direct.distributed.PyDatagram import *
 from direct.distributed.MsgTypes import *
 from direct.showbase.PythonUtil import makeList
 
 
-class OTPInternalRepository(ConnectionRepository):
+# TODO: Remove Astron dependence.
+
+class OTPInternalRepository(AstronInternalRepository):
     notify = DirectNotifyGlobal.directNotify.newCategory('OTPInternalRepository')
     dbId = 4003
 
     def __init__(self, baseChannel, serverId, dcFileNames, dcSuffix, connectMethod, threadedNet):
-        ConnectionRepository.__init__(self, baseChannel, serverId=serverId, dcFileNames=dcFileNames,
+        AstronInternalRepository.__init__(self, baseChannel, serverId=serverId, dcFileNames=dcFileNames,
                                           dcSuffix=dcSuffix, connectMethod=connectMethod, threadedNet=threadedNet)
 
     def handleConnected(self):
-        ConnectionRepository.handleConnected(self)
+        AstronInternalRepository.handleConnected(self)
 
     def getAccountIdFromSender(self):
         return (self.getMsgSender() >> 32) & 0xFFFFFFFF

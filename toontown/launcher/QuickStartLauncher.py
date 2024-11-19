@@ -1,6 +1,6 @@
 if __debug__:
     from panda3d.core import loadPrcFile
-    loadPrcFile('config/Configrc.prc')
+    loadPrcFile('etc/Configrc.prc')
 else:
     import sys
     sys.path = ['']
