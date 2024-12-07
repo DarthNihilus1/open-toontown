@@ -27,6 +27,7 @@ class DisguisePage(ShtikerPage.ShtikerPage):
     def load(self):
         ShtikerPage.ShtikerPage.load(self)
         gui = loader.loadModel('phase_9/models/gui/cog_disguises')
+        bookModel = loader.loadModel('phase_3.5/models/gui/stickerbook_gui')
         self.frame = DirectFrame(parent=self, relief=None, scale=0.47, pos=(0.02, 1, 0))
         self.bkgd = DirectFrame(parent=self.frame, geom=gui.find('**/base'), relief=None, scale=(0.98, 1, 1))
         self.bkgd.setTextureOff(1)
@@ -77,6 +78,10 @@ class DisguisePage(ShtikerPage.ShtikerPage):
         self.lawbotTwoPointOLabel.hide()
         self.bossbotTwoPointOLabel = DirectLabel(parent=self.frame, relief=None, text=TTLocalizer.TwoPointO, text_font=ToontownGlobals.getSuitFont(), text_scale=0.09, text_align=TextNode.ACenter, pos=(-0.91, 0, -0.95))
         self.bossbotTwoPointOLabel.hide()
+        # arrow buttons are for switching between different cog disguises
+        # have leftArrow to the left of the cogname and rightArrow to the right of the cogname
+        self.leftArrow = DirectButton(parent=self.frame, relief=None, image=(bookModel.find('**/arrow_button'), bookModel.find('**/arrow_down'), bookModel.find('**/arrow_rollover')), scale=(-0.1, 0.1, 0.1), pos=(-0.8, 0, -1.15), command=self.switchSuit, extraArgs=[-1])
+        self.rightArrow = DirectButton(parent=self.frame, relief=None, image=(bookModel.find('**/arrow_button'), bookModel.find('**/arrow_down'), bookModel.find('**/arrow_rollover')), scale=(0.1, 0.1, 0.1), pos=(-0.35, 0, -1.15), command=self.switchSuit, extraArgs=[1])
         self.partFrame = DirectFrame(parent=self.frame, relief=None)
         self.parts = []
         for partNum in range(0, NumParts):
@@ -98,6 +103,9 @@ class DisguisePage(ShtikerPage.ShtikerPage):
         self.cashbotUpgradeButton.hide()
         self.lawbotUpgradeButton.hide()
         self.bossbotUpgradeButton.hide()
+        # hide the arrows
+        self.leftArrow.hide()
+        self.rightArrow.hide()
         meterFace = gui.find('**/meter_face_whole')
         meterFaceHalf = gui.find('**/meter_face_half')
         self.meterFace = DirectLabel(parent=self.frame, relief=None, geom=meterFace, color=self.meterColor, pos=(0.455, 0.0, 0.04))
@@ -122,6 +130,18 @@ class DisguisePage(ShtikerPage.ShtikerPage):
     def updatePage(self):
         self.doTab(self.activeTab)
 
+    def switchSuit(self, direction):
+        # depending on the tab we are on change the cog disguise the toon has equipped
+        # keep the level the same, and don't change the actual disguise used for merits 
+        # if we are +1 we are incrementing, so we call incrementCosmeticCogType based on the current tab we are on
+        # if we are -1 we are decrementing and we call decrementCosmeticCogType based on the current tab we are on
+        index = self.activeTab
+        if direction == 1:
+            base.localAvatar.incrementCosmeticCogType(index)
+        else:
+            base.localAvatar.decrementCosmeticCogType(index)
+        
+            
     def updatePartsDisplay(self, index, numParts, numPartsRequired):
         partBitmask = 1
         groupingBitmask = CogDisguiseGlobals.PartsPerSuitBitmasks[index]
@@ -194,6 +214,10 @@ class DisguisePage(ShtikerPage.ShtikerPage):
         self.lawbotUpgradeButton.hide()
         self.bossbotUpgradeButton.hide()
 
+    def hideArrows(self):
+        self.leftArrow.hide()
+        self.rightArrow.hide()
+
     def doTab(self, index):
         self.activeTab = index
         self.tabs[index].reparentTo(self.pageFrame)
@@ -208,19 +232,27 @@ class DisguisePage(ShtikerPage.ShtikerPage):
 
         self.bkgd.setColor(DeptColors[index])
         self.deptLabel['text'] = (SuitDNA.suitDeptFullnames[SuitDNA.suitDepts[index]],)
-        cogIndex = base.localAvatar.cogTypes[index] + SuitDNA.suitsPerDept * index
+        # based on the index if we have a v2 suit for it then use cosmeticCogTypes
+        # otherwise use cogTypes
+        if base.localAvatar.getV2Suit(index):
+            cogIndex = base.localAvatar.cosmeticCogTypes[index] + SuitDNA.suitsPerDept * index
+        else:
+            cogIndex = base.localAvatar.cogTypes[index] + SuitDNA.suitsPerDept * index
         cog = SuitDNA.suitHeadTypes[cogIndex]
         self.progressTitle.hide()
         if SuitDNA.suitDepts[index] == 'm':
             self.progressTitle = self.cogbuckTitle
             # show the v2 label if the toon has a 2.0 suit
-            if base.localAvatar.getCashbotV2Suit():
+            if base.localAvatar.getV2Suit(index):
                 self.hideV2Labels()
                 self.cashbotTwoPointOLabel.show()
+                self.leftArrow.show()
+                self.rightArrow.show()
             else:
                 self.hideV2Labels()
-            if base.localAvatar.isMaxedCashbotSuit() and not base.localAvatar.getCashbotV2Suit():
+            if base.localAvatar.isMaxedCashbotSuit() and not base.localAvatar.getV2Suit(index):
                 self.hideUpgradeButtons()
+                self.hideArrows()
                 self.cashbotUpgradeButton.show()
             else:
                 self.hideUpgradeButtons()
@@ -230,12 +262,15 @@ class DisguisePage(ShtikerPage.ShtikerPage):
         elif SuitDNA.suitDepts[index] == 'l':
             self.progressTitle = self.juryNoticeTitle
             # show the v2 label if the toon has a 2.0 suit
-            if base.localAvatar.getLawbotV2Suit():
+            if base.localAvatar.getV2Suit(index):
                 self.hideV2Labels()
                 self.lawbotTwoPointOLabel.show()
+                self.leftArrow.show()
+                self.rightArrow.show()
             else:
                 self.hideV2Labels()
-            if base.localAvatar.isMaxedLawbotSuit() and not base.localAvatar.getLawbotV2Suit():
+                self.hideArrows()
+            if base.localAvatar.isMaxedLawbotSuit() and not base.localAvatar.getV2Suit(index):
                 self.hideUpgradeButtons()
                 self.lawbotUpgradeButton.show()
             else:
@@ -243,25 +278,32 @@ class DisguisePage(ShtikerPage.ShtikerPage):
         elif SuitDNA.suitDepts[index] == 'c':
             self.progressTitle = self.stockOptionTitle
             # show the v2 label if the toon has a 2.0 suit
-            if base.localAvatar.getBossbotV2Suit():
+            if base.localAvatar.getV2Suit(index):
                 self.hideV2Labels()
                 self.bossbotTwoPointOLabel.show()
+                self.leftArrow.show()
+                self.rightArrow.show()
             else:
                 self.hideV2Labels()
-            if base.localAvatar.isMaxedBossbotSuit() and not base.localAvatar.getBossbotV2Suit():
+                self.hideArrows()
+            if base.localAvatar.isMaxedBossbotSuit() and not base.localAvatar.getV2Suit(index):
                 self.hideUpgradeButtons()
                 self.bossbotUpgradeButton.show()
+
             else:
                 self.hideUpgradeButtons()
         else:
             self.progressTitle = self.meritTitle
             # show the v2 label if the toon has a 2.0 suit
-            if base.localAvatar.getSellbotV2Suit():
+            if base.localAvatar.getV2Suit(index):
                 self.hideV2Labels()
                 self.sellbotTwoPointOLabel.show()
+                self.leftArrow.show()
+                self.rightArrow.show()
             else:
                 self.hideV2Labels()
-            if base.localAvatar.isMaxedSellbotSuit() and not base.localAvatar.getSellbotV2Suit():
+                self.hideArrows()
+            if base.localAvatar.isMaxedSellbotSuit() and not base.localAvatar.getV2Suit(index):
                 self.hideUpgradeButtons()
                 self.sellbotUpgradeButton.show()
             else:

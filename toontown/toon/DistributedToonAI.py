@@ -99,6 +99,9 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
          0,
          0,
          0]
+        self.v2Suits = [0, 0, 0, 0]
+        self.cosmeticCogTypes = [0, 0, 0, 0] # These are for V2 disguises that you can change around 
+
         self.cogLevel = [0,
          0,
          0,
@@ -204,10 +207,7 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
         self.hostedParties = []
         self.partiesInvitedTo = []
         self.partyReplyInfoBases = []
-        self.hasSellbotV2Suit = False
-        self.hasCashbotV2Suit = False
-        self.hasLawbotV2Suit = False
-        self.hasBossbotV2Suit = False
+
         return
 
     def generate(self):
@@ -1253,8 +1253,35 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
     def d_setCogTypes(self, types):
         self.sendUpdate('setCogTypes', [types])
 
+    def d_setCosmeticCogTypes(self, types):
+        self.sendUpdate('setCosmeticCogTypes', [types])
+
+    def b_setCosmeticCogTypes(self, types):
+        self.setCosmeticCogTypes(types)
+        self.d_setCosmeticCogTypes(types)
+
+    def setCosmeticCogTypes(self, types):
+        if not types:
+            self.notify.warning('cosmeticCogTypes set to bad value: %s. Resetting to [0,0,0,0]' % types)
+            self.cosmeticCogTypes = [0,
+             0,
+             0,
+             0]
+        else:
+            self.cosmeticCogTypes = types
     def getCogTypes(self):
         return self.cogTypes
+
+    def incrementCosmeticCogType(self, dept):
+        # check to make sure it's not over the max cog tier
+        if self.cosmeticCogTypes[dept] < SuitDNA.suitsPerDept - 1:
+            self.cosmeticCogTypes[dept] += 1
+        self.b_setCosmeticCogTypes(self.cosmeticCogTypes)
+
+    def decrementCosmeticCogType(self, dept):
+        if self.cosmeticCogTypes[dept] > 0:
+            self.cosmeticCogTypes[dept] -= 1
+        self.b_setCosmeticCogTypes(self.cosmeticCogTypes)
 
     def b_setCogLevels(self, levels):
         self.setCogLevels(levels)
@@ -1439,38 +1466,6 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
 
     def isMaxedLawbotSuit(self):
         return self.cogLevels[1] == ToontownGlobals.MaxCogSuitLevel
-        
-
-    def b_setSellbotV2Suit(self, flag):
-        self.setSellbotV2Suit(flag)
-        self.d_setSellbotV2Suit(flag)
-
-    def b_setCashbotV2Suit(self, flag):
-        self.setCashbotV2Suit(flag)
-        self.d_setCashbotV2Suit(flag)
-
-    def b_setLawbotV2Suit(self, flag):
-        self.setLawbotV2Suit(flag)
-        self.d_setLawbotV2Suit(flag)
-
-    def b_setBossbotV2Suit(self, flag):
-        self.setBossbotV2Suit(flag)
-        self.d_setBossbotV2Suit(flag)
-
-    def d_setSellbotV2Suit(self, flag):
-        self.sendUpdate('setSellbotV2Suit', [flag])
-    
-    def d_setCashbotV2Suit(self, flag):
-        self.sendUpdate('setCashbotV2Suit', [flag])
-
-    def d_setLawbotV2Suit(self, flag):
-        self.sendUpdate('setLawbotV2Suit', [flag])
-
-    def d_setBossbotV2Suit(self, flag):
-        self.sendUpdate('setBossbotV2Suit', [flag])
-
-    def setSellbotV2Suit(self, flag):
-        self.hasSellbotV2Suit = flag
 
     def resetCogDisguiseV2(self, dept):
         # resets cog disguise for v2 promo depending on dept 
@@ -1482,6 +1477,9 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
         newCogMerits = origCogMerits[:]
         newCogMerits[dept] = 0
         self.b_setCogMerits(newCogMerits)
+        # set cosmetic cog type for the dept to the highest tier
+        self.cosmeticCogTypes[dept] = SuitDNA.suitsPerDept - 1
+        self.b_setCosmeticCogTypes(self.cosmeticCogTypes)
 
     def upgradeSellbotSuit(self):
         # If the suit is not maxed, , dont upgrade
@@ -1489,10 +1487,7 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
             return
         # reset the cog level back to 8 but only for sellbot
         self.resetCogDisguiseV2(3)
-        self.b_setSellbotV2Suit(True)
-
-    def setCashbotV2Suit(self, flag):
-        self.hasCashbotV2Suit = flag
+        self.setV2Suit(3)
 
     def upgradeCashbotSuit(self):
 
@@ -1500,50 +1495,41 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
             return
             
         self.resetCogDisguiseV2(2)
-        self.b_setCashbotV2Suit(True)
-
-    def setLawbotV2Suit(self, flag):
-        self.hasLawbotV2Suit = flag
+        self.setV2Suit(2)
 
     def upgradeLawbotSuit(self):
         if not self.isMaxedLawbotSuit():
             return
         self.resetCogDisguiseV2(1)
-        self.b_setLawbotV2Suit(True)
-
-    def setBossbotV2Suit(self, flag):
-        self.hasBossbotV2Suit = flag
+        self.setV2Suit(1)
 
     def upgradeBossbotSuit(self):
         if not self.isMaxedBossbotSuit():
             return
         self.resetCogDisguiseV2(0)
-        self.b_setBossbotV2Suit(True)
+        self.setV2Suit(0)
 
-    def getSellbotV2Suit(self):
-        return self.hasSellbotV2Suit
+    def b_setV2Suits(self, suits):
+        self.setV2Suits(suits)
+        self.d_setV2Suits(suits)
+
+    def d_setV2Suits(self, suits):
+        self.sendUpdate('setV2Suits', [suits])
+
+    def setV2Suit(self, dept):
+        # set the suit to v2 based on the department 
+        self.v2Suits[dept] = 1
+        self.b_setV2Suits(self.v2Suits)
+
+    def setV2Suits(self, suits):
+        self.v2Suits = suits
     
-    def getCashbotV2Suit(self):
-        return self.hasCashbotV2Suit
-    
-    def getLawbotV2Suit(self):
-        return self.hasLawbotV2Suit
-    
-    def getBossbotV2Suit(self):
-        return self.hasBossbotV2Suit
+    def getV2Suits(self):
+        return self.v2Suits
     
     def getV2Suit(self, dept):
         # check if the suit is v2 based on the department 
-        if dept == 0:
-            return self.hasBossbotV2Suit
-        elif dept == 1:
-            return self.hasLawbotV2Suit
-        elif dept == 2:
-            return self.hasCashbotV2Suit
-        elif dept == 3:
-            return self.hasSellbotV2Suit
-        else:
-            return False
+        return self.v2Suits[dept]
     
     def b_setCogIndex(self, index):
         self.setCogIndex(index)

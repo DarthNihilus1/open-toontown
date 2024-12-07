@@ -109,6 +109,8 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
          0,
          0,
          0]
+        self.cosmeticCogTypes = [0, 0, 0, 0] # these are for v2 disguises that you can change around
+        self.v2Suits = [0, 0, 0, 0]
         self.savedCheesyEffect = CENormal
         self.savedCheesyHoodId = 0
         self.savedCheesyExpireTime = 0
@@ -186,10 +188,7 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
         self.gmNameTagColor = 'whiteGM'
         self.gmNameTagString = ''
         self.transitioning = False
-        self.hasSellbotV2Suit = False
-        self.hasCashbotV2Suit = False
-        self.hasLawbotV2Suit = False
-        self.hasBossbotV2Suit = False
+
         return
 
     def disable(self):
@@ -898,6 +897,27 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
         self.cogTypes = types
         if self.disguisePage:
             self.disguisePage.updatePage()
+            
+    def incrementCosmeticCogType(self, dept):
+        # check to make sure it's not over the max cog tier
+        if self.cosmeticCogTypes[dept] < SuitDNA.suitsPerDept - 1:
+            self.cosmeticCogTypes[dept] += 1
+        if self.disguisePage:
+            self.disguisePage.updatePage()
+        # send an update to the server to increment the cog types
+        self.sendUpdate('incrementCosmeticCogType', [dept])
+
+    def decrementCosmeticCogType(self, dept):
+        if self.cosmeticCogTypes[dept] > 0:
+            self.cosmeticCogTypes[dept] -= 1
+        if self.disguisePage:
+            self.disguisePage.updatePage()
+        self.sendUpdate('decrementCosmeticCogType', [dept])
+
+    def setCosmeticCogTypes(self, types):
+        self.cosmeticCogTypes = types
+        if self.disguisePage:
+            self.disguisePage.updatePage()
 
     def setCogLevels(self, levels):
         self.cogLevels = levels
@@ -906,7 +926,10 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
 
     def getCogLevels(self):
         return self.cogLevels
-
+    
+    def getCosmeticCogTypes(self):
+        return self.cosmeticCogTypes
+    
     def setCogParts(self, parts):
         self.cogParts = parts
         if self.disguisePage:
@@ -945,8 +968,7 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
         if self.cogLevels[1] == ToontownGlobals.MaxCogSuitLevel:
             return True
         
-    def setSellbotV2Suit(self, flag):
-        self.hasSellbotV2Suit = flag
+
     
     def b_upgradeSellbotSuit(self):
         self.d_upgradeSellbotSuit()
@@ -958,10 +980,7 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
     def upgradeSellbotSuit(self):
         if self.disguisePage:
             self.disguisePage.updatePage()
-
-       
-    def setCashbotV2Suit(self, flag):
-        self.hasCashbotV2Suit = flag
+        
 
     def b_upgradeCashbotSuit(self):
         self.d_upgradeCashbotSuit()
@@ -974,9 +993,7 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
         if self.disguisePage:
             self.disguisePage.updatePage()
 
-    def setLawbotV2Suit(self, flag):
-        self.hasLawbotV2Suit = flag
-       
+ 
     def b_upgradeLawbotSuit(self):
         self.d_upgradeLawbotSuit()
         self.upgradeLawbotSuit()
@@ -988,8 +1005,7 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
         if self.disguisePage:
             self.disguisePage.updatePage()
 
-    def setBossbotV2Suit(self, flag):
-        self.hasBossbotV2Suit = flag
+ 
 
     def b_upgradeBossbotSuit(self):
         self.d_upgradeBossbotSuit()
@@ -1002,30 +1018,23 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
         if self.disguisePage:
             self.disguisePage.updatePage()
 
-    def getSellbotV2Suit(self):
-        return self.hasSellbotV2Suit
+
+    def getV2Suits(self):
+        return self.v2Suits
     
-    def getCashbotV2Suit(self):
-        return self.hasCashbotV2Suit
-    
-    def getLawbotV2Suit(self):
-        return self.hasLawbotV2Suit
-    
-    def getBossbotV2Suit(self):
-        return self.hasBossbotV2Suit
-    
+    def setV2Suits(self, suits):
+        self.v2Suits = suits
+        if self.disguisePage:
+            self.disguisePage.updatePage()
+
+    def setV2Suit(self, dept):
+        self.v2Suits[dept] = True
+        if self.disguisePage:
+            self.disguisePage.updatePage()
+
     def getV2Suit(self, dept):
-        # check if the suit is v2 based on the department 
-        if dept == 0:
-            return self.hasBossbotV2Suit
-        elif dept == 1:
-            return self.hasLawbotV2Suit
-        elif dept == 2:
-            return self.hasCashbotV2Suit
-        elif dept == 3:
-            return self.hasSellbotV2Suit
-        else:
-            return False
+        return self.v2Suits[dept]
+        
     def setCogIndex(self, index):
         self.cogIndex = index
         if self.cogIndex == -1:
@@ -1034,7 +1043,11 @@ class DistributedToon(DistributedPlayer.DistributedPlayer, Toon.Toon, Distribute
         else:
             parts = self.getCogParts()
             if CogDisguiseGlobals.isPaidSuitComplete(self, parts, index):
-                cogIndex = self.cogTypes[index] + SuitDNA.suitsPerDept * index
+                # if we have a v2 disguise on the index then use cosmeticCogTypes
+                if self.getV2Suit(index):
+                    cogIndex = self.cosmeticCogTypes[index] + SuitDNA.suitsPerDept * index
+                else:
+                    cogIndex = self.cogTypes[index] + SuitDNA.suitsPerDept * index
                 cog = SuitDNA.suitHeadTypes[cogIndex]
                 self.putOnSuit(cog)
             else:

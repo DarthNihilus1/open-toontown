@@ -522,11 +522,11 @@ dclass DistributedToon : DistributedPlayer {
   setBuildingRadar(uint8[] = [0 * 4]) required ownrecv db;
   setCogLevels(uint8[] = [0 * 4]) required broadcast ownrecv db;
   setCogTypes(uint8[] = [0 * 4]) required broadcast ownrecv db;
+  setCosmeticCogTypes(uint8[] = [0 * 4]) required broadcast ownrecv db;
+  setV2Suits(uint8[] = [0 * 4]) required broadcast ownrecv db;
   setCogParts(uint32[] = [0 * 4]) required broadcast ownrecv db;
-  setSellbotV2Suit(bool) required broadcast ownrecv db;
-  setCashbotV2Suit(bool) required broadcast ownrecv db;
-  setLawbotV2Suit(bool)  required broadcast ownrecv db;
-  setBossbotV2Suit(bool) required broadcast ownrecv db;
+  incrementCosmeticCogType(uint8) ownsend airecv;
+  decrementCosmeticCogType(uint8) ownsend airecv;
   upgradeSellbotSuit() ownsend airecv;
   upgradeCashbotSuit() ownsend airecv;
   upgradeLawbotSuit() ownsend airecv;

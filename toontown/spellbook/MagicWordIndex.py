@@ -280,11 +280,9 @@ class MaxToon(MagicWord):
         toon.b_setCogParts([*CogDisguiseGlobals.PartsPerSuitBitmasks])
         toon.b_setCogTypes([SuitDNA.suitsPerDept - 1] * 4)
         toon.b_setCogLevels([ToontownGlobals.MaxCogSuitLevel] * 4)
-        # set v2 to 0
-        toon.b_setSellbotV2Suit(0)
-        toon.b_setCashbotV2Suit(0)
-        toon.b_setLawbotV2Suit(0)
-        toon.b_setBossbotV2Suit(0)
+        toon.b_setCosmeticCogTypes([0] * 4)
+        toon.b_setV2Suits([0] * 4)
+
 
         return f"Successfully maxed {toon.getName()}!"
     
