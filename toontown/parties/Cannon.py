@@ -1,5 +1,6 @@
 import math
 from panda3d.core import *
+from panda3d.otp import Nametag, NametagFloat3d
 from direct.interval.MetaInterval import Sequence, Parallel
 from direct.interval.FunctionInterval import Func
 from direct.interval.LerpInterval import LerpScaleInterval, LerpColorScaleInterval

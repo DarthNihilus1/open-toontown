@@ -14,3 +14,23 @@ class ToontownInternalRepository(OTPInternalRepository):
             return False
 
         return True
+    
+    # Anesidora
+    def sendUpdateToDoId(self, dclassName, fieldName, doId, args,
+                         channelId=None):
+        """
+        channelId can be used as a recipient if you want to bypass the normal
+        airecv, ownrecv, broadcast, etc.  If you don't include a channelId
+        or if channelId == doId, then the normal broadcast options will
+        be used.
+        
+        See Also: def queryObjectField
+        """
+        dclass=self.dclassesByName.get(dclassName+self.dcSuffix)
+        assert dclass is not None
+        if channelId is None:
+            channelId=doId
+        if dclass is not None:
+            dg = dclass.aiFormatUpdate(
+                    fieldName, doId, channelId, self.ourChannel, args)
+            self.send(dg)

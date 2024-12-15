@@ -20,7 +20,7 @@ class DistributedPartyActivity(DistributedObject.DistributedObject):
     def __init__(self, cr, activityId, activityType, wantLever = False, wantRewardGui = False):
         DistributedObject.DistributedObject.__init__(self, cr)
         self.activityId = activityId
-        self.activityName = PartyGlobals.ActivityIds.getString(self.activityId)
+        self.activityName = PartyGlobals.ActivityIds(self.activityId).name
         self.activityType = activityType
         self.wantLever = wantLever
         self.wantRewardGui = wantRewardGui
@@ -234,9 +234,9 @@ class DistributedPartyActivity(DistributedObject.DistributedObject):
     def loadSign(self):
         actNameForSign = self.activityName
         if self.activityId == PartyGlobals.ActivityIds.PartyJukebox40:
-            actNameForSign = PartyGlobals.ActivityIds.getString(PartyGlobals.ActivityIds.PartyJukebox)
+            actNameForSign = PartyGlobals.ActivityIds.PartyJukebox.name
         elif self.activityId == PartyGlobals.ActivityIds.PartyDance20:
-            actNameForSign = PartyGlobals.ActivityIds.getString(PartyGlobals.ActivityIds.PartyDance)
+            actNameForSign = PartyGlobals.ActivityIds.PartyDance.name
         self.sign = self.root.attachNewNode('%sSign' % self.activityName)
         self.signModel = self.party.defaultSignModel.copyTo(self.sign)
         self.signFlat = self.signModel.find('**/sign_flat')

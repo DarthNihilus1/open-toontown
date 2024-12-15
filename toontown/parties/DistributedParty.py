@@ -378,7 +378,7 @@ class DistributedParty(DistributedObject.DistributedObject):
     def loadDecorations(self):
         self.decorationsList = []
         for decorBase in self.partyInfo.decors:
-            self.decorationsList.append(Decoration(PartyGlobals.DecorationIds.getString(decorBase.decorId), PartyUtils.convertDistanceFromPartyGrid(decorBase.x, 0), PartyUtils.convertDistanceFromPartyGrid(decorBase.y, 1), PartyUtils.convertDegreesFromPartyGrid(decorBase.h)))
+            self.decorationsList.append(Decoration(PartyGlobals.DecorationIds(decorBase.decorId).name, PartyUtils.convertDistanceFromPartyGrid(decorBase.x, 0), PartyUtils.convertDistanceFromPartyGrid(decorBase.y, 1), PartyUtils.convertDegreesFromPartyGrid(decorBase.h)))
 
     def unload(self):
         if hasattr(self, 'decorationsList') and self.decorationsList:
