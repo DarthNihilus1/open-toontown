@@ -24,7 +24,7 @@ from toontown.ai.HolidayInfoYearly import *
 from toontown.ai.HolidayInfoRelatively import *
 from toontown.ai import HolidayRepeaterAI
 from toontown.effects import FireworkManagerAI
-from toontown.fishing import BingoNightHolidayAI
+# from toontown.fishing import BingoNightHolidayAI
 from toontown.suit import HolidaySuitInvasionManagerAI
 from toontown.ai import BlackCatHolidayMgrAI
 from toontown.ai import ScavengerHuntMgrAI
@@ -1533,17 +1533,17 @@ class HolidayManagerAI:
         #  (Month.OCTOBER, 30, 14, 59, 59) ]
         #),
 
-        ToontownGlobals.FISH_BINGO_NIGHT: HolidayInfo_Weekly(
-        BingoNightHolidayAI.BingoNightHolidayAI,
-        # Fish Bingo Night - runs once a week
-        # Time1: 3pm PST to 9pm PST on Wednesdays
-        [ (Day.TUESDAY, 20, 0, 0),
-          (Day.WEDNESDAY, 5, 0, 0),
+        # ToontownGlobals.FISH_BINGO_NIGHT: HolidayInfo_Weekly(
+        # BingoNightHolidayAI.BingoNightHolidayAI,
+        # # Fish Bingo Night - runs once a week
+        # # Time1: 3pm PST to 9pm PST on Wednesdays
+        # [ (Day.TUESDAY, 20, 0, 0),
+        #   (Day.WEDNESDAY, 5, 0, 0),
 
-          (Day.SATURDAY, 20, 0, 0),
-          (Day.SUNDAY, 5, 0, 0) ],
-        displayOnCalendar = False,
-        ),
+        #   (Day.SATURDAY, 20, 0, 0),
+        #   (Day.SUNDAY, 5, 0, 0) ],
+        # displayOnCalendar = False,
+        # ),
 
         ToontownGlobals.KART_RECORD_DAILY_RESET: HolidayInfo_Daily(
             RaceManagerAI.KartRecordDailyResetter,
@@ -1633,16 +1633,16 @@ class HolidayManagerAI:
     holidays = holidaysCommon
 
     if not language in ['japanese', 'german', 'portuguese', 'french'] :
-        if simbase.wantBingo:
-            holidays[ToontownGlobals.FISH_BINGO_NIGHT] = HolidayInfo_Weekly(
-                BingoNightHolidayAI.BingoNightHolidayAI,
-                # Fish Bingo Night - runs once a week
-                # Time: 12:00:01 am PST to 11:59:59 pm PST on Wednesdays
-                [(Day.WEDNESDAY, 0, 0, 1),
-                  (Day.WEDNESDAY, 23, 59, 59),
-                  ],
-                displayOnCalendar = True,
-                )
+        # if simbase.wantBingo:
+        #     holidays[ToontownGlobals.FISH_BINGO_NIGHT] = HolidayInfo_Weekly(
+        #         BingoNightHolidayAI.BingoNightHolidayAI,
+        #         # Fish Bingo Night - runs once a week
+        #         # Time: 12:00:01 am PST to 11:59:59 pm PST on Wednesdays
+        #         [(Day.WEDNESDAY, 0, 0, 1),
+        #           (Day.WEDNESDAY, 23, 59, 59),
+        #           ],
+        #         displayOnCalendar = True,
+        #         )
 
         if simbase.wantKarts:
             holidays[ToontownGlobals.KART_RECORD_DAILY_RESET] = HolidayInfo_Daily(
@@ -1696,22 +1696,22 @@ class HolidayManagerAI:
         # of Fish Bingo, Circuit Racing, and Trolley Holiday for 24 hours
 
         if simbase.config.GetBool('want-silly-saturday', 1):
-            holidays[ToontownGlobals.SILLY_SATURDAY_BINGO] = HolidayInfo_Weekly(
-                BingoNightHolidayAI.BingoNightHolidayAI,
-                [(Day.SATURDAY, 0, 0, 1),
-                 (Day.SATURDAY, 1, 59, 59),
+            # holidays[ToontownGlobals.SILLY_SATURDAY_BINGO] = HolidayInfo_Weekly(
+            #     BingoNightHolidayAI.BingoNightHolidayAI,
+            #     [(Day.SATURDAY, 0, 0, 1),
+            #      (Day.SATURDAY, 1, 59, 59),
     
-                 (Day.SATURDAY, 6, 0, 0),
-                 (Day.SATURDAY, 7, 59, 59),
+            #      (Day.SATURDAY, 6, 0, 0),
+            #      (Day.SATURDAY, 7, 59, 59),
 
-                 (Day.SATURDAY, 12, 0, 0),
-                 (Day.SATURDAY, 13, 59, 59),
+            #      (Day.SATURDAY, 12, 0, 0),
+            #      (Day.SATURDAY, 13, 59, 59),
 
-                 (Day.SATURDAY, 18, 0, 0),
-                 (Day.SATURDAY, 19, 59, 59),
-                 ],
-                displayOnCalendar = True,
-                )
+            #      (Day.SATURDAY, 18, 0, 0),
+            #      (Day.SATURDAY, 19, 59, 59),
+            #      ],
+            #     displayOnCalendar = True,
+            #     )
             holidays[ToontownGlobals.SILLY_SATURDAY_CIRCUIT] = HolidayInfo_Weekly(
                 RaceManagerAI.CircuitRaceHolidayMgr,
                 [(Day.SATURDAY, 2, 0, 0),
