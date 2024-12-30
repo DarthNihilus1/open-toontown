@@ -207,6 +207,8 @@ class ToontownAIRepository(ToontownInternalRepository):
         self.newsManager = NewsManagerAI(self)
         self.newsManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
 
+        self.dataStoreManager = self.generateGlobalObject(OTP_DO_ID_TOONTOWN_TEMP_STORE_MANAGER, 'DistributedDataStoreManager')
+
         # Generate our Welcome Valley manager...
         self.welcomeValleyManager = WelcomeValleyManagerAI(self)
         self.welcomeValleyManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
