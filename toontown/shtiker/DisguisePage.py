@@ -7,6 +7,7 @@ from toontown.suit import SuitDNA
 from toontown.battle import SuitBattleGlobals
 from toontown.minigame import MinigamePowerMeter
 from toontown.coghq import CogDisguiseGlobals
+from toontown.makeatoon.MakeAToonGlobals import *
 DeptColors = (Vec4(0.647, 0.608, 0.596, 1.0),
  Vec4(0.588, 0.635, 0.671, 1.0),
  Vec4(0.596, 0.714, 0.659, 1.0),
@@ -27,7 +28,13 @@ class DisguisePage(ShtikerPage.ShtikerPage):
     def load(self):
         ShtikerPage.ShtikerPage.load(self)
         gui = loader.loadModel('phase_9/models/gui/cog_disguises')
-        bookModel = loader.loadModel('phase_3.5/models/gui/stickerbook_gui')
+        otherGui = loader.loadModel('phase_3/models/gui/tt_m_gui_mat_mainGui')
+        shuffleFrame = otherGui.find('**/tt_t_gui_mat_shuffleFrame')
+        shuffleArrowUp = otherGui.find('**/tt_t_gui_mat_shuffleArrowUp')
+        shuffleArrowDown = otherGui.find('**/tt_t_gui_mat_shuffleArrowDown')
+        shuffleArrowRollover = otherGui.find('**/tt_t_gui_mat_shuffleArrowUp')
+        shuffleArrowDisabled = otherGui.find('**/tt_t_gui_mat_shuffleArrowDisabled')
+        
         self.frame = DirectFrame(parent=self, relief=None, scale=0.47, pos=(0.02, 1, 0))
         self.bkgd = DirectFrame(parent=self.frame, geom=gui.find('**/base'), relief=None, scale=(0.98, 1, 1))
         self.bkgd.setTextureOff(1)
@@ -80,8 +87,23 @@ class DisguisePage(ShtikerPage.ShtikerPage):
         self.bossbotTwoPointOLabel.hide()
         # arrow buttons are for switching between different cog disguises
         # have leftArrow to the left of the cogname and rightArrow to the right of the cogname
-        self.leftArrow = DirectButton(parent=self.frame, relief=None, image=(bookModel.find('**/arrow_button'), bookModel.find('**/arrow_down'), bookModel.find('**/arrow_rollover')), scale=(-0.1, 0.1, 0.1), pos=(-0.8, 0, -1.15), command=self.switchSuit, extraArgs=[-1])
-        self.rightArrow = DirectButton(parent=self.frame, relief=None, image=(bookModel.find('**/arrow_button'), bookModel.find('**/arrow_down'), bookModel.find('**/arrow_rollover')), scale=(0.1, 0.1, 0.1), pos=(-0.35, 0, -1.15), command=self.switchSuit, extraArgs=[1])
+        self.leftArrow = DirectButton(parent=self.frame, relief=None, image=(shuffleArrowUp,
+         shuffleArrowDown,
+         shuffleArrowRollover,
+         shuffleArrowDisabled),
+        image_scale=halfButtonScale,
+        image1_scale=halfButtonHoverScale,
+        image2_scale=halfButtonHoverScale,
+         pos=(-1.50, 0, -1.15), command=self.switchSuit, extraArgs=[-1])
+        self.rightArrow = DirectButton(parent=self.frame, relief=None, image=(shuffleArrowUp,
+         shuffleArrowDown,
+         shuffleArrowRollover,
+         shuffleArrowDisabled),
+        image_scale=halfButtonInvertScale,
+        image1_scale=halfButtonInvertHoverScale,
+        image2_scale=halfButtonInvertHoverScale,
+         pos=(-0.35, 0, -1.15), command=self.switchSuit, extraArgs=[1])
+
         self.partFrame = DirectFrame(parent=self.frame, relief=None)
         self.parts = []
         for partNum in range(0, NumParts):
