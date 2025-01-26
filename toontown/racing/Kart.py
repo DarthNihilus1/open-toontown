@@ -1,7 +1,7 @@
 from direct.directnotify import DirectNotifyGlobal
 from panda3d.core import *
+from panda3d.physics import *
 from direct.gui.DirectGui import *
-from panda3d.core import *
 from direct.interval.IntervalGlobal import *
 from otp.avatar import ShadowCaster
 from toontown.racing.KartDNA import *
@@ -315,7 +315,7 @@ class Kart(NodePath, ShadowCaster.ShadowCaster):
             rimTexPath = getAccessory(getDefaultRim())
         else:
             rimTexPath = getAccessory(self.kartDNA[KartDNA.rimsType])
-        rimTex = loader.loadTexture('%s.jpg' % rimTexPath, '%s_a.rgb' % rimTexPath)
+        rimTex = loader.loadTexture('%s.png' % rimTexPath)
         for kart in self.geom:
             leftFrontWheelRim = self.geom[kart].find('**/leftFrontWheelRim')
             rightFrontWheelRim = self.geom[kart].find('**/rightFrontWheelRim')
@@ -397,8 +397,8 @@ class Kart(NodePath, ShadowCaster.ShadowCaster):
         if self.kartDNA[KartDNA.decalType] != InvalidEntry:
             decalId = getAccessory(self.kartDNA[KartDNA.decalType])
             kartDecal = getDecalId(self.kartDNA[KartDNA.bodyType])
-            hoodDecalTex = loader.loadTexture('phase_6/maps/%s_HoodDecal_%s.jpg' % (kartDecal, decalId), 'phase_6/maps/%s_HoodDecal_%s_a.rgb' % (kartDecal, decalId))
-            sideDecalTex = loader.loadTexture('phase_6/maps/%s_SideDecal_%s.jpg' % (kartDecal, decalId), 'phase_6/maps/%s_SideDecal_%s_a.rgb' % (kartDecal, decalId))
+            hoodDecalTex = loader.loadTexture('phase_6/maps/%s_HoodDecal_%s.png' % (kartDecal, decalId))
+            sideDecalTex = loader.loadTexture('phase_6/maps/%s_SideDecal_%s.png' % (kartDecal, decalId))
             hoodDecalTex.setMinfilter(Texture.FTLinearMipmapLinear)
             sideDecalTex.setMinfilter(Texture.FTLinearMipmapLinear)
             for kart in self.geom:

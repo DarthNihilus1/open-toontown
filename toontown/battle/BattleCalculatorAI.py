@@ -74,7 +74,8 @@ class BattleCalculatorAI:
                 return (1, 95)
             else:
                 return (0, 0)
-        if self.toonsAlwaysHit:
+        toon = self.battle.getToon(attackIndex)
+        if self.toonsAlwaysHit or toon.instantKillMode:
             return (1, 95)
         elif self.toonsAlwaysMiss:
             return (0, 0)
@@ -529,6 +530,9 @@ class BattleCalculatorAI:
             if attackLevel == -1 and not atkTrack == FIRE:
                 result = LURE_SUCCEEDED
             elif atkTrack != TRAP:
+                toon = self.battle.getToon(toonId)
+                if atkTrack != HEAL and toon.instantKillMode:
+                    attackDamage = 32767
                 result = attackDamage
                 if atkTrack == HEAL:
                     if not self.__attackHasHit(attack, suit=0):
@@ -747,11 +751,15 @@ class BattleCalculatorAI:
         toonId = self.toonAtkOrder[attackIndex]
         attack = self.battle.toonAttacks[toonId]
         atkTrack = self.__getActualTrack(attack)
+        TTOStyle = simbase.config.GetBool('want-tto-style-knockback', False)
         if atkTrack == HEAL or atkTrack == PETSOS:
             return
         tgts = self.__createToonTargetList(toonId)
         for currTgt in tgts:
-            tgtPos = self.battle.suits.index(currTgt)
+            if not TTOStyle:
+               tgtPos = self.battle.activeSuits.index(currTgt)
+            else:
+               tgtPos = self.battle.suits.index(currTgt)
             attackerId = self.toonAtkOrder[attackIndex]
             attack = self.battle.toonAttacks[attackerId]
             track = self.__getActualTrack(attack)

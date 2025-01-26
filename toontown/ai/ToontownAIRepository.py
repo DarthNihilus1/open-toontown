@@ -37,12 +37,14 @@ from toontown.hood.TTHoodDataAI import TTHoodDataAI
 from toontown.pets.PetManagerAI import PetManagerAI
 from toontown.quest.QuestManagerAI import QuestManagerAI
 from toontown.racing import RaceGlobals
+from toontown.fishing.DistributedFishingPondAI import DistributedFishingPondAI
 from toontown.racing.DistributedLeaderBoardAI import DistributedLeaderBoardAI
 from toontown.racing.DistributedRacePadAI import DistributedRacePadAI
 from toontown.racing.DistributedStartingBlockAI import DistributedStartingBlockAI
 from toontown.racing.DistributedStartingBlockAI import DistributedViewingBlockAI
 from toontown.racing.DistributedViewPadAI import DistributedViewPadAI
 from toontown.racing.RaceManagerAI import RaceManagerAI
+from toontown.uberdog.DistributedPartyManagerAI import DistributedPartyManagerAI
 from toontown.safezone.SafeZoneManagerAI import SafeZoneManagerAI
 from toontown.shtiker.CogPageManagerAI import CogPageManagerAI
 from toontown.spellbook.ToontownMagicWordManagerAI import ToontownMagicWordManagerAI
@@ -95,6 +97,7 @@ class ToontownAIRepository(ToontownInternalRepository):
         self.friendManager = None
         self.toontownFriendsManager = None
         self.estateMgr = None
+        self.partyManager = None
         self.zoneTable = {}
         self.dnaStoreMap = {}
         self.dnaDataMap = {}
@@ -241,6 +244,10 @@ class ToontownAIRepository(ToontownInternalRepository):
         # Generate our Tutorial manager...
         self.tutorialManager = TutorialManagerAI(self)
         self.tutorialManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
+
+        # Generate our party manager...
+        self.partyManager = DistributedPartyManagerAI(self)
+        self.partyManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
 
     def generateHood(self, hoodConstructor, zoneId):
         # Bossbot HQ doesn't use DNA, so we skip over that.
@@ -391,7 +398,29 @@ class ToontownAIRepository(ToontownInternalRepository):
         return loadDNAFileAI(dnaStore, dnaFileName)
 
     def findFishingPonds(self, dnaData, zoneId, area):
-        return [], []  # TODO
+        fishingPonds, fishingPondGroups = [], []
+
+        if "fishing_pond" in dnaData.getName():
+            fishingPondGroups.append(dnaData)
+            pond = DistributedFishingPondAI(self)
+            pond.setArea(area)
+            pond.generateWithRequired(zoneId)
+            fishingPonds.append(pond)
+        else:
+            if isinstance(dnaData, DNAVisGroup):
+                name = dnaData.getName()
+                visId = int(name.split(":", 1)[0]) % 1000
+                zoneId = ZoneUtil.getHoodId(zoneId) + visId
+
+            for i in range(dnaData.getNumChildren()):
+                foundFishingPonds, foundFishingPondGroups = self.findFishingPonds(dnaData.at(i), zoneId, area)
+                fishingPonds.extend(foundFishingPonds)
+                fishingPondGroups.extend(foundFishingPondGroups)
+
+        return fishingPonds, fishingPondGroups
+
+    def findFishingSpots(self, dnaData, pond):
+        return []  # TODO
 
     def findPartyHats(self, dnaData, zoneId):
         return []  # TODO
