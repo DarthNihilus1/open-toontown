@@ -3,26 +3,52 @@ from direct.distributed.DistributedObjectGlobalUD import DistributedObjectGlobal
 from direct.distributed.PyDatagram import *
 
 from otp.otpbase import OTPGlobals
-
-
+import random
+import string
+import json
 class FriendsOperation:
+    """
+    Base class for all friend-related operations.
+    """
 
     def __init__(self, friendsManager, sender):
+        """
+        Initialize the FriendsOperation.
+
+        :param friendsManager: The friends manager instance.
+        :param sender: The sender's ID.
+        """
         self.friendsManager = friendsManager
         self.sender = sender
 
     def _handleDone(self):
-        # TODO
-        pass
+        """
+        Handle the completion of the operation.
+        """
+        self.friendsManager.operations.remove(self)
 
     def _handleError(self, error):
-        # TODO
-        pass
+        """
+        Handle an error during the operation.
+
+        :param error: The error message.
+        """
+        self.friendsManager.notify.warning(error)
+        self.friendsManager.operations.remove(self)
 
 
 class GetFriendsListOperation(FriendsOperation):
+    """
+    Operation to retrieve the friends list of a sender.
+    """
 
     def __init__(self, friendsManager, sender):
+        """
+        Initialize the GetFriendsListOperation.
+
+        :param friendsManager: The friends manager instance.
+        :param sender: The sender's ID.
+        """
         FriendsOperation.__init__(self, friendsManager, sender)
         self.friendsList = None
         self.tempFriendsList = None
@@ -30,6 +56,9 @@ class GetFriendsListOperation(FriendsOperation):
         self.currentFriendIdx = None
 
     def start(self):
+        """
+        Start the operation to retrieve the friends list.
+        """
         self.friendsList = []
         self.tempFriendsList = []
         self.onlineFriends = []
@@ -38,6 +67,12 @@ class GetFriendsListOperation(FriendsOperation):
                                                         self.__handleSenderRetrieved)
 
     def __handleSenderRetrieved(self, dclass, fields):
+        """
+        Handle the retrieval of the sender's data.
+
+        :param dclass: The data class of the sender.
+        :param fields: The fields of the sender.
+        """
         if dclass != self.friendsManager.air.dclassesByName['DistributedToonUD']:
             self._handleError('Retrieved sender is not a DistributedToonUD!')
             return
@@ -51,6 +86,12 @@ class GetFriendsListOperation(FriendsOperation):
                                                         self.__handleFriendRetrieved)
 
     def __handleFriendRetrieved(self, dclass, fields):
+        """
+        Handle the retrieval of a friend's data.
+
+        :param dclass: The data class of the friend.
+        :param fields: The fields of the friend.
+        """
         if dclass != self.friendsManager.air.dclassesByName['DistributedToonUD']:
             self._handleError('Retrieved friend is not a DistributedToonUD!')
             return
@@ -67,11 +108,20 @@ class GetFriendsListOperation(FriendsOperation):
                                                         self.__handleFriendRetrieved)
 
     def __checkFriendsOnline(self):
+        """
+        Check which friends are currently online.
+        """
         self.currentFriendIdx = 0
         for friendDetails in self.friendsList:
             self.friendsManager.air.getActivated(friendDetails[0], self.__gotActivatedResp)
 
     def __gotActivatedResp(self, avId, activated):
+        """
+        Handle the response of checking if a friend is activated.
+
+        :param avId: The avatar ID.
+        :param activated: Whether the friend is activated.
+        """
         self.currentFriendIdx += 1
         if activated:
             self.onlineFriends.append(avId)
@@ -80,34 +130,67 @@ class GetFriendsListOperation(FriendsOperation):
             self._handleDone()
 
     def __sendFriendsList(self, success):
+        """
+        Send the friends list to the sender.
+
+        :param success: Whether the operation was successful.
+        """
         self.friendsManager.sendUpdateToAvatarId(self.sender, 'getFriendsListResponse', [success, self.friendsList if success else []])
         for friendId in self.onlineFriends:
             self.friendsManager.sendFriendOnline(self.sender, friendId, 0, 1)
 
     def _handleDone(self):
+        """
+        Handle the completion of the operation.
+        """
         self.__sendFriendsList(True)
         FriendsOperation._handleDone(self)
 
     def _handleError(self, error):
+        """
+        Handle an error during the operation.
+
+        :param error: The error message.
+        """
         self.__sendFriendsList(False)
         FriendsOperation._handleError(self, error)
 
 
 class GetAvatarDetailsOperation(FriendsOperation):
+    """
+    Operation to retrieve the details of an avatar.
+    """
 
     def __init__(self, friendsManager, sender):
+        """
+        Initialize the GetAvatarDetailsOperation.
+
+        :param friendsManager: The friends manager instance.
+        :param sender: The sender's ID.
+        """
         FriendsOperation.__init__(self, friendsManager, sender)
         self.avId = None
         self.dclass = None
         self.fields = None
 
     def start(self, avId):
+        """
+        Start the operation to retrieve the avatar details.
+
+        :param avId: The avatar ID.
+        """
         self.avId = avId
         self.fields = {}
         self.friendsManager.air.dbInterface.queryObject(self.friendsManager.air.dbId, avId,
                                                         self.__handleAvatarRetrieved)
 
     def __handleAvatarRetrieved(self, dclass, fields):
+        """
+        Handle the retrieval of the avatar's data.
+
+        :param dclass: The data class of the avatar.
+        :param fields: The fields of the avatar.
+        """
         if dclass not in (self.friendsManager.air.dclassesByName['DistributedToonUD'],
                           self.friendsManager.air.dclassesByName['DistributedPetAI']):
             self._handleError('Retrieved avatar is not a DistributedToonUD or DistributedPetAI!')
@@ -119,6 +202,13 @@ class GetAvatarDetailsOperation(FriendsOperation):
         self._handleDone()
 
     def __packAvatarDetails(self, dclass, fields):
+        """
+        Pack the avatar details into a byte array.
+
+        :param dclass: The data class of the avatar.
+        :param fields: The fields of the avatar.
+        :return: The packed avatar details.
+        """
         # Pack required fields.
         fieldPacker = DCPacker()
         for i in range(dclass.getNumInheritedFields()):
@@ -140,6 +230,11 @@ class GetAvatarDetailsOperation(FriendsOperation):
         return fieldPacker.getBytes()
 
     def __sendAvatarDetails(self, success):
+        """
+        Send the avatar details to the sender.
+
+        :param success: Whether the operation was successful.
+        """
         datagram = PyDatagram()
         datagram.addUint32(self.fields['avId'])  # avId
         datagram.addUint8(0 if success else 1)  # returnCode
@@ -150,17 +245,33 @@ class GetAvatarDetailsOperation(FriendsOperation):
         self.friendsManager.sendUpdateToAvatarId(self.sender, 'getAvatarDetailsResponse', [datagram.getMessage()])
 
     def _handleDone(self):
+        """
+        Handle the completion of the operation.
+        """
         self.__sendAvatarDetails(True)
         FriendsOperation._handleDone(self)
 
     def _handleError(self, error):
+        """
+        Handle an error during the operation.
+
+        :param error: The error message.
+        """
         self.__sendAvatarDetails(False)
         FriendsOperation._handleError(self, error)
 
 
 class MakeFriendsOperation(FriendsOperation):
+    """
+    Operation to make two avatars friends.
+    """
 
     def __init__(self, friendsManager):
+        """
+        Initialize the MakeFriendsOperation.
+
+        :param friendsManager: The friends manager instance.
+        """
         FriendsOperation.__init__(self, friendsManager, None)
         self.avatarAId = None
         self.avatarBId = None
@@ -172,6 +283,14 @@ class MakeFriendsOperation(FriendsOperation):
         self.avatarBFriendsList = None
 
     def start(self, avatarAId, avatarBId, flags, context):
+        """
+        Start the operation to make two avatars friends.
+
+        :param avatarAId: The first avatar's ID.
+        :param avatarBId: The second avatar's ID.
+        :param flags: The friendship flags.
+        :param context: The context of the operation.
+        """
         self.avatarAId = avatarAId
         self.avatarBId = avatarBId
         self.flags = flags
@@ -181,14 +300,34 @@ class MakeFriendsOperation(FriendsOperation):
         self.friendsManager.air.getActivated(self.avatarAId, self.__gotActivatedAvatarA)
 
     def __handleActivatedResp(self, avId, activated):
+        """
+        Handle the response of checking if an avatar is activated.
+
+        :param avId: The avatar ID.
+        :param activated: Whether the avatar is activated.
+        """
         if activated:
             self.onlineToons.append(avId)
 
     def __gotActivatedAvatarA(self, avId, activated):
+        """
+        Handle the response of checking if the first avatar is activated.
+
+        :param avId: The avatar ID.
+        :param activated: Whether the avatar is activated.
+        """
         self.__handleActivatedResp(avId, activated)
         self.friendsManager.air.getActivated(self.avatarBId, self.__gotActivatedAvatarB)
 
     def __handleMakeFriends(self, dclass, fields, friendId):
+        """
+        Handle the process of making friends.
+
+        :param dclass: The data class of the avatar.
+        :param fields: The fields of the avatar.
+        :param friendId: The friend's ID.
+        :return: A tuple indicating success and the updated friends list.
+        """
         if dclass != self.friendsManager.air.dclassesByName['DistributedToonUD']:
             self._handleError('Retrieved avatar is not a DistributedToonUD!')
             return False, []
@@ -207,6 +346,12 @@ class MakeFriendsOperation(FriendsOperation):
         return True, friendsList
 
     def __handleAvatarARetrieved(self, dclass, fields):
+        """
+        Handle the retrieval of the first avatar's data.
+
+        :param dclass: The data class of the avatar.
+        :param fields: The fields of the avatar.
+        """
         success, avatarAFriendsList = self.__handleMakeFriends(dclass, fields, self.avatarBId)
         if success:
             self.avatarAFriendsList = avatarAFriendsList
@@ -214,17 +359,35 @@ class MakeFriendsOperation(FriendsOperation):
                                                             self.__handleAvatarBRetrieved)
 
     def __gotActivatedAvatarB(self, avId, activated):
+        """
+        Handle the response of checking if the second avatar is activated.
+
+        :param avId: The avatar ID.
+        :param activated: Whether the avatar is activated.
+        """
         self.__handleActivatedResp(avId, activated)
         self.friendsManager.air.dbInterface.queryObject(self.friendsManager.air.dbId, self.avatarAId,
                                                         self.__handleAvatarARetrieved)
 
     def __handleAvatarBRetrieved(self, dclass, fields):
+        """
+        Handle the retrieval of the second avatar's data.
+
+        :param dclass: The data class of the avatar.
+        :param fields: The fields of the avatar.
+        """
         success, avatarBFriendsList = self.__handleMakeFriends(dclass, fields, self.avatarAId)
         if success:
             self.avatarBFriendsList = avatarBFriendsList
             self._handleDone()
 
     def __handleSetFriendsList(self, avId, friendsList):
+        """
+        Handle setting the friends list for an avatar.
+
+        :param avId: The avatar ID.
+        :param friendsList: The updated friends list.
+        """
         if avId in self.onlineToons:
             self.friendsManager.sendUpdateToAvatar(avId, 'setFriendsList', [friendsList])
         else:
@@ -234,6 +397,9 @@ class MakeFriendsOperation(FriendsOperation):
                                                              {'setFriendsList': [friendsList]})
 
     def _handleDone(self):
+        """
+        Handle the completion of the operation.
+        """
         self.resultCode = 1
         if self.avatarAFriendsList is not None and self.avatarBFriendsList is not None:
             self.__handleSetFriendsList(self.avatarAId, self.avatarAFriendsList)
@@ -247,14 +413,28 @@ class MakeFriendsOperation(FriendsOperation):
         FriendsOperation._handleDone(self)
 
     def _handleError(self, error):
+        """
+        Handle an error during the operation.
+
+        :param error: The error message.
+        """
         self.resultCode = 0
         self.friendsManager.sendMakeFriendsResponse(self.avatarAId, self.avatarBId, self.resultCode, self.context)
         FriendsOperation._handleError(self, error)
 
 
 class RemoveFriendOperation(FriendsOperation):
+    """
+    Operation to remove a friend from the sender's friends list.
+    """
 
     def __init__(self, friendsManager, sender):
+        """
+        Initialize the RemoveFriendOperation.
+
+        :param friendsManager: The friends manager instance.
+        :param sender: The sender's ID.
+        """
         FriendsOperation.__init__(self, friendsManager, sender)
         self.friendId = None
         self.onlineToons = None
@@ -262,24 +442,55 @@ class RemoveFriendOperation(FriendsOperation):
         self.friendFriendsList = None
 
     def start(self, friendId):
+        """
+        Start the operation to remove a friend.
+
+        :param friendId: The friend's ID.
+        """
         self.friendId = friendId
         self.onlineToons = []
         self.friendsManager.air.getActivated(self.sender, self.__gotSenderActivated)
 
     def __handleActivatedResp(self, avId, activated):
+        """
+        Handle the response of checking if an avatar is activated.
+
+        :param avId: The avatar ID.
+        :param activated: Whether the avatar is activated.
+        """
         if activated:
             self.onlineToons.append(avId)
 
     def __gotSenderActivated(self, avId, activated):
+        """
+        Handle the response of checking if the sender is activated.
+
+        :param avId: The avatar ID.
+        :param activated: Whether the avatar is activated.
+        """
         self.__handleActivatedResp(avId, activated)
         self.friendsManager.air.getActivated(self.friendId, self.__gotFriendActivated)
 
     def __gotFriendActivated(self, avId, activated):
+        """
+        Handle the response of checking if the friend is activated.
+
+        :param avId: The avatar ID.
+        :param activated: Whether the avatar is activated.
+        """
         self.__handleActivatedResp(avId, activated)
         self.friendsManager.air.dbInterface.queryObject(self.friendsManager.air.dbId, self.sender,
                                                         self.__handleSenderRetrieved)
 
     def __handleRemoveFriend(self, dclass, fields, friendId):
+        """
+        Handle the process of removing a friend.
+
+        :param dclass: The data class of the avatar.
+        :param fields: The fields of the avatar.
+        :param friendId: The friend's ID.
+        :return: A tuple indicating success and the updated friends list.
+        """
         if dclass != self.friendsManager.air.dclassesByName['DistributedToonUD']:
             self._handleError('Retrieved sender is not a DistributedToonUD!')
             return False, []
@@ -299,6 +510,12 @@ class RemoveFriendOperation(FriendsOperation):
             return False, []
 
     def __handleSenderRetrieved(self, dclass, fields):
+        """
+        Handle the retrieval of the sender's data.
+
+        :param dclass: The data class of the sender.
+        :param fields: The fields of the sender.
+        """
         success, senderFriendsList = self.__handleRemoveFriend(dclass, fields, self.friendId)
         if success:
             self.senderFriendsList = senderFriendsList
@@ -306,12 +523,24 @@ class RemoveFriendOperation(FriendsOperation):
                                                             self.__handleFriendRetrieved)
 
     def __handleFriendRetrieved(self, dclass, fields):
+        """
+        Handle the retrieval of the friend's data.
+
+        :param dclass: The data class of the friend.
+        :param fields: The fields of the friend.
+        """
         success, friendFriendsList = self.__handleRemoveFriend(dclass, fields, self.sender)
         if success:
             self.friendFriendsList = friendFriendsList
             self._handleDone()
 
     def __handleSetFriendsList(self, avId, friendsList):
+        """
+        Handle setting the friends list for an avatar.
+
+        :param avId: The avatar ID.
+        :param friendsList: The updated friends list.
+        """
         if avId in self.onlineToons:
             self.friendsManager.sendUpdateToAvatar(avId, 'setFriendsList', [friendsList])
         else:
@@ -321,6 +550,9 @@ class RemoveFriendOperation(FriendsOperation):
                                                              {'setFriendsList': [friendsList]})
 
     def _handleDone(self):
+        """
+        Handle the completion of the operation.
+        """
         if self.senderFriendsList is not None and self.friendFriendsList is not None:
             self.__handleSetFriendsList(self.sender, self.senderFriendsList)
             self.__handleSetFriendsList(self.friendId, self.friendFriendsList)
@@ -336,24 +568,47 @@ class RemoveFriendOperation(FriendsOperation):
 
 
 class ComingOnlineOperation(FriendsOperation):
+    """
+    Operation to handle an avatar coming online.
+    """
 
     def __init__(self, friendsManager):
+        """
+        Initialize the ComingOnlineOperation.
+
+        :param friendsManager: The friends manager instance.
+        """
         FriendsOperation.__init__(self, friendsManager, None)
         self.avId = None
         self.friendsList = None
         self.currentFriendIdx = None
 
     def start(self, avId, friendsList):
+        """
+        Start the operation to handle an avatar coming online.
+
+        :param avId: The avatar ID.
+        :param friendsList: The friends list of the avatar.
+        """
         self.avId = avId
         self.friendsList = friendsList
         self.__checkFriendsOnline()
 
     def __checkFriendsOnline(self):
+        """
+        Check which friends are currently online.
+        """
         self.currentFriendIdx = 0
         for friendId in self.friendsList:
             self.friendsManager.air.getActivated(friendId, self.__gotFriendActivated)
 
     def __gotFriendActivated(self, avId, activated):
+        """
+        Handle the response of checking if a friend is activated.
+
+        :param avId: The avatar ID.
+        :param activated: Whether the friend is activated.
+        """
         self.currentFriendIdx += 1
         if activated:
             self.friendsManager.declareObject(avId, self.avId)
@@ -365,8 +620,16 @@ class ComingOnlineOperation(FriendsOperation):
 
 
 class GoingOfflineOperation(FriendsOperation):
+    """
+    Operation to handle an avatar going offline.
+    """
 
     def __init__(self, friendsManager):
+        """
+        Initialize the GoingOfflineOperation.
+
+        :param friendsManager: The friends manager instance.
+        """
         FriendsOperation.__init__(self, friendsManager, None)
         self.avId = None
         self.friendsList = None
@@ -374,12 +637,23 @@ class GoingOfflineOperation(FriendsOperation):
         self.currentFriendIdx = None
 
     def start(self, avId):
+        """
+        Start the operation to handle an avatar going offline.
+
+        :param avId: The avatar ID.
+        """
         self.avId = avId
         self.friendsList = []
         self.accId = 0
         self.friendsManager.air.dbInterface.queryObject(self.friendsManager.air.dbId, self.avId, self.__handleAvatarRetrieved)
 
     def __handleAvatarRetrieved(self, dclass, fields):
+        """
+        Handle the retrieval of the avatar's data.
+
+        :param dclass: The data class of the avatar.
+        :param fields: The fields of the avatar.
+        """
         if dclass != self.friendsManager.air.dclassesByName['DistributedToonUD']:
             self._handleError('Retrieved avatar is not a DistributedToonUD!')
             return
@@ -389,11 +663,20 @@ class GoingOfflineOperation(FriendsOperation):
         self.__checkFriendsOnline()
 
     def __checkFriendsOnline(self):
+        """
+        Check which friends are currently online.
+        """
         self.currentFriendIdx = 0
         for friendId, _ in self.friendsList:
             self.friendsManager.air.getActivated(friendId, self.__gotFriendActivated)
 
     def __gotFriendActivated(self, avId, activated):
+        """
+        Handle the response of checking if a friend is activated.
+
+        :param avId: The avatar ID.
+        :param activated: Whether the friend is activated.
+        """
         self.currentFriendIdx += 1
         if activated:
             self.friendsManager.undeclareObject(avId, self.avId)
@@ -403,19 +686,97 @@ class GoingOfflineOperation(FriendsOperation):
         if self.currentFriendIdx >= len(self.friendsList):
             self._handleDone()
 
+class GenerateSecretOperation(FriendsOperation):
+    """
+    Operation to generate a secret.
+    """
 
+    def __init__(self, friendsManager):
+        """
+        Initialize the GenerateSecretOperation.
+
+        :param friendsManager: The friends manager instance.
+        :param requesterId: The requester's ID.
+        """
+        FriendsOperation.__init__(self, friendsManager, None)
+        self.secret = None
+        self.requesterId = None
+
+    def start(self, requesterId):
+        """
+        Start the operation to generate a secret.
+        Format of secret:
+        TT 3 random letters/numbers 3 random letters/numbers
+        """
+        self.requesterId = requesterId
+        # first check if friends list is full
+
+        # check if too many secrets
+        # TODO
+        self.secret = ''
+        for i in range(3):
+            self.secret += random.choice(string.ascii_letters + string.digits)
+        self.secret += ' '
+        for i in range(3):
+            self.secret += random.choice(string.ascii_letters + string.digits)
+
+        self.friendsManager.secrets[self.secret] = requesterId
+        self._handleDone()
+
+    def _handleDone(self):
+        """
+        Handle the completion of the operation.
+        """
+        FriendsOperation._handleDone(self)
+        # send the response to the requester that it was a success, the result and the secret
+        self.friendsManager.sendRequestSecretResponse(self.requesterId, 1, self.secret)
+
+
+    def _handleError(self, error):
+        """
+        Handle an error during the operation.
+
+        :param error: The error message.
+        """
+        FriendsOperation._handleError(self, error)
+        # send the response to the requester that it was a failure, the result and the secret
+        self.friendsManager.sendRequestSecretResponse(self.requesterId, 0, '')
+    
 class ToontownFriendsManagerUD(DistributedObjectGlobalUD):
+    """
+    The main friends manager class for Toontown.
+    """
     notify = DirectNotifyGlobal.directNotify.newCategory('ToontownFriendsManagerUD')
 
     def __init__(self, air):
+        """
+        Initialize the ToontownFriendsManagerUD.
+
+        :param air: The AI repository instance.
+        """
         DistributedObjectGlobalUD.__init__(self, air)
+        self.secret = None
         self.operations = []
-        self.secrets = []
+        self.secrets = {}
 
     def sendMakeFriendsResponse(self, avatarAId, avatarBId, result, context):
+        """
+        Send the response for making friends.
+
+        :param avatarAId: The first avatar's ID.
+        :param avatarBId: The second avatar's ID.
+        :param result: The result of the operation.
+        :param context: The context of the operation.
+        """
         self.sendUpdate('makeFriendsResponse', [avatarAId, avatarBId, result, context])
 
     def declareObject(self, doId, objId):
+        """
+        Declare an object to the client.
+
+        :param doId: The distributed object ID.
+        :param objId: The object ID.
+        """
         datagram = PyDatagram()
         datagram.addServerHeader(self.GetPuppetConnectionChannel(doId), self.air.ourChannel, CLIENTAGENT_DECLARE_OBJECT)
         datagram.addUint32(objId)
@@ -423,6 +784,13 @@ class ToontownFriendsManagerUD(DistributedObjectGlobalUD):
         self.air.send(datagram)
 
     def undeclareObject(self, doId, objId, isAccount=False):
+        """
+        Undeclare an object to the client.
+
+        :param doId: The distributed object ID.
+        :param objId: The object ID.
+        :param isAccount: Whether the object is an account.
+        """
         datagram = PyDatagram()
         if isAccount:
             datagram.addServerHeader(self.GetAccountConnectionChannel(doId), self.air.ourChannel,
@@ -435,12 +803,33 @@ class ToontownFriendsManagerUD(DistributedObjectGlobalUD):
         self.air.send(datagram)
 
     def sendFriendOnline(self, avId, friendId, commonChatFlags, whitelistChatFlags):
+        """
+        Notify that a friend has come online.
+
+        :param avId: The avatar ID.
+        :param friendId: The friend's ID.
+        :param commonChatFlags: The common chat flags.
+        :param whitelistChatFlags: The whitelist chat flags.
+        """
         self.sendUpdateToAvatarId(avId, 'friendOnline', [friendId, commonChatFlags, whitelistChatFlags])
 
     def sendFriendOffline(self, avId, friendId):
+        """
+        Notify that a friend has gone offline.
+
+        :param avId: The avatar ID.
+        :param friendId: The friend's ID.
+        """
         self.sendUpdateToAvatarId(avId, 'friendOffline', [friendId])
 
     def sendUpdateToAvatar(self, avId, fieldName, args=[]):
+        """
+        Send an update to an avatar.
+
+        :param avId: The avatar ID.
+        :param fieldName: The field name to update.
+        :param args: The arguments for the update.
+        """
         dclass = self.air.dclassesByName['DistributedToonUD']
         if not dclass:
             return
@@ -453,6 +842,12 @@ class ToontownFriendsManagerUD(DistributedObjectGlobalUD):
         self.air.send(datagram)
 
     def runSenderOperation(self, operationType, *args):
+        """
+        Run an operation initiated by the sender.
+
+        :param operationType: The type of operation.
+        :param args: The arguments for the operation.
+        """
         sender = self.air.getAvatarIdFromSender()
         if not sender:
             return
@@ -462,27 +857,84 @@ class ToontownFriendsManagerUD(DistributedObjectGlobalUD):
         newOperation.start(*args)
 
     def runServerOperation(self, operationType, *args):
+        """
+        Run an operation initiated by the server.
+
+        :param operationType: The type of operation.
+        :param args: The arguments for the operation.
+        """
         newOperation = operationType(self)
         self.operations.append(newOperation)
         newOperation.start(*args)
 
     def getFriendsListRequest(self):
+        """
+        Handle a request to get the friends list.
+        """
         self.runSenderOperation(GetFriendsListOperation)
 
     def getAvatarDetailsRequest(self, avId):
+        """
+        Handle a request to get avatar details.
+
+        :param avId: The avatar ID.
+        """
         self.runSenderOperation(GetAvatarDetailsOperation, avId)
 
     def makeFriends(self, avatarAId, avatarBId, flags, context):
+        """
+        Handle a request to make two avatars friends.
+
+        :param avatarAId: The first avatar's ID.
+        :param avatarBId: The second avatar's ID.
+        :param flags: The friendship flags.
+        :param context: The context of the operation.
+        """
         self.runServerOperation(MakeFriendsOperation, avatarAId, avatarBId, flags, context)
 
     def removeFriend(self, friendId):
+        """
+        Handle a request to remove a friend.
+
+        :param friendId: The friend's ID.
+        """
         self.runSenderOperation(RemoveFriendOperation, friendId)
 
+    def requestSecret(self, requesterId):
+        """
+        Handle a request to generate a secret.
+
+        """
+        self.runServerOperation(GenerateSecretOperation, requesterId)
+
     def comingOnline(self, avId, friendsList):
+        """
+        Handle a request for an avatar coming online.
+
+        :param avId: The avatar ID.
+        :param friendsList: The friends list of the avatar.
+        """
         self.runServerOperation(ComingOnlineOperation, avId, friendsList)
 
     def goingOffline(self, avId):
+        """
+        Handle a request for an avatar going offline.
+
+        :param avId: The avatar ID.
+        """
         self.runServerOperation(GoingOfflineOperation, avId)
 
-    def requestSecret(self, requesterId):
-        print('requestSecret')
+    def sendRequestSecretResponse(self, requesterId, success, secret):
+        """
+        Send a response to a secret request.
+
+        :param requesterId: The requester's ID.
+        :param success: Whether the operation was successful.
+        :param secret: The generated secret.
+        """
+        self.sendUpdate('requestSecretResponse', [success, secret, requesterId])
+
+
+
+
+        

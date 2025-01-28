@@ -50,9 +50,11 @@ class FriendManagerAI(DistributedObjectGlobalAI):
         # will be sent in response to secret requests to the database,
         # via the AIR.
         self.accept("makeFriendsReply", self.makeFriendsReply)
+        self.accept("requestSecretReply", self.requestSecretReply)
 
     def delete(self):
         self.ignore("makeFriendsReply")
+        self.ignore("requestSecretReply")
         DistributedObjectGlobalAI.delete(self)
 
     ### Messages sent from inviter client to AI
@@ -409,3 +411,18 @@ class FriendManagerAI(DistributedObjectGlobalAI):
             avatar.d_friendsNotify(invite.inviterId, 2)
 
         self.clearInvite(invite)
+
+    def requestSecretReply(self, result, secret, requesterId):
+        self.down_requestSecretResponse(requesterId, result, secret)
+        
+    def down_requestSecretResponse(self, recipient, result, secret):
+        """requestSecret(self, int8 result, string secret)
+
+        Sent by the AI to the client in response to requestSecret().
+        result is one of:
+
+          0 - Too many secrets outstanding.  Try again later.
+          1 - Success.  The new secret is supplied.
+
+        """
+        self.sendUpdateToAvatarId(recipient, 'requestSecretResponse', [result, secret])
