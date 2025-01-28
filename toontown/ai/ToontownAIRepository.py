@@ -547,6 +547,19 @@ class ToontownAIRepository(ToontownInternalRepository):
         if __astron__:
             self.toontownFriendsManager.sendRequestSecret(requesterId)
 
+    def submitSecret(self, avId, secret):
+        """
+        avId: the avatar id of the friend who requested the secret
+        secret: the secret that was requested
+        Submits a secret that was previously requested.
+        Will submit through the friends manager.
+        When the secret is submitted, a "submitSecretReply" message will
+        be thrown with two parameters: the result code (0 or 1,
+        indicating failure or success), and the requesterId again.
+        """
+        if __astron__:
+            self.toontownFriendsManager.sendSubmitSecret(avId, secret)
+
     def setupFiles(self):
         if not os.path.exists(self.dataFolder):
             os.mkdir(self.dataFolder)

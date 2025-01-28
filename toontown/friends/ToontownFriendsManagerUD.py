@@ -1,7 +1,7 @@
 from direct.directnotify import DirectNotifyGlobal
 from direct.distributed.DistributedObjectGlobalUD import DistributedObjectGlobalUD
 from direct.distributed.PyDatagram import *
-
+from direct.distributed.MsgTypes import  *
 from otp.otpbase import OTPGlobals
 import random
 import string
@@ -709,8 +709,7 @@ class GenerateSecretOperation(FriendsOperation):
         TT 3 random letters/numbers 3 random letters/numbers
         """
         self.requesterId = requesterId
-        # first check if friends list is full
-
+        self.friendsManager.loadSecretsDB()
         # check if too many secrets
         # TODO
         self.secret = ''
@@ -728,6 +727,7 @@ class GenerateSecretOperation(FriendsOperation):
         Handle the completion of the operation.
         """
         FriendsOperation._handleDone(self)
+        self.friendsManager.updateSecretsDB()
         # send the response to the requester that it was a success, the result and the secret
         self.friendsManager.sendRequestSecretResponse(self.requesterId, 1, self.secret)
 
@@ -907,6 +907,32 @@ class ToontownFriendsManagerUD(DistributedObjectGlobalUD):
         """
         self.runServerOperation(GenerateSecretOperation, requesterId)
 
+    def submitSecret(self, avId, secret):
+        """
+        Handle a request to submit a secret.
+
+        :param avId: The avatar ID.
+        :param secret: The secret.
+        """
+        self.loadSecretsDB()
+        recipient = self.secrets.get(secret, None)
+        if recipient:
+            self.runServerOperation(MakeFriendsOperation, avId, recipient, 0, 0)
+            self.sendSubmitSecretResponse(avId, 1, recipient)
+        else:
+            self.sendSubmitSecretResponse(avId, 0, recipient)
+
+    def sendSubmitSecretResponse(self, requesterId, success, recipient):
+        """
+        Send a response to a secret submission.
+
+        :param requesterId: The requester's ID.
+        :param success: Whether the operation was successful.
+        :param secret: The secret.
+        :param recipient: The recipient's ID.
+        """
+        self.sendUpdate('submitSecretResponse', [success, recipient, requesterId])
+
     def comingOnline(self, avId, friendsList):
         """
         Handle a request for an avatar coming online.
@@ -935,6 +961,16 @@ class ToontownFriendsManagerUD(DistributedObjectGlobalUD):
         self.sendUpdate('requestSecretResponse', [success, secret, requesterId])
 
 
+    def updateSecretsDB(self):
+        with open('astron/databases/secrets.json', 'w') as f:
+            json.dump(self.secrets, f)
+        self.notify.debug('Updated secrets database')
 
-
+    def loadSecretsDB(self):
+        try:
+            with open('astron/databases/secrets.json', 'r') as f:
+                self.secrets = json.load(f)
+            self.notify.debug('Loaded secrets database')
+        except:
+            self.notify.warning('Failed to load secrets database')
         
