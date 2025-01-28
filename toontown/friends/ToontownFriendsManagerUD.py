@@ -6,6 +6,7 @@ from otp.otpbase import OTPGlobals
 import random
 import string
 import json
+from panda3d.direct import DCPacker
 class FriendsOperation:
     """
     Base class for all friend-related operations.
