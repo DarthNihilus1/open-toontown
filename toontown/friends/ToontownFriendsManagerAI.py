@@ -22,5 +22,14 @@ class ToontownFriendsManagerAI(DistributedObjectGlobalAI):
 
         messenger.send("makeFriendsReply", [result, context])
 
+    def requestSecretResponse(self, result, secret, avId):
+        messenger.send("requestSecretReply", [result, secret, avId])
+
     def sendRequestSecret(self, requesterId):
         self.sendUpdate('requestSecret', [requesterId])
+
+    def sendSubmitSecret(self, avId, secret):
+        self.sendUpdate('submitSecret', [avId, secret])
+
+    def submitSecretResponse(self, result, recipient, requesterId):
+        messenger.send("submitSecretReply", [result, recipient, requesterId])

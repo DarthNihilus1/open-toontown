@@ -18,6 +18,11 @@ class FriendManagerAI(DistributedObjectGlobalAI):
     # forget who has declined friendships from whom.
     DeclineFriendshipTimeout = 600.0
 
+    # This is the length of time, in seconds, to sit on a secret guess
+    #     # before processing it.  This serves to make it difficult to guess
+    #     # passwords at random.
+    SecretDelay = 1.0
+
     # This subclass is used to record currently outstanding
     # in-the-game invitation requests.
     class Invite:
@@ -50,9 +55,13 @@ class FriendManagerAI(DistributedObjectGlobalAI):
         # will be sent in response to secret requests to the database,
         # via the AIR.
         self.accept("makeFriendsReply", self.makeFriendsReply)
+        self.accept("requestSecretReply", self.requestSecretReply)
+        self.accept('submitSecretReply', self.submitSecretReply)
 
     def delete(self):
         self.ignore("makeFriendsReply")
+        self.ignore("requestSecretReply")
+        self.ignore('submitSecretReply')
         DistributedObjectGlobalAI.delete(self)
 
     ### Messages sent from inviter client to AI
@@ -220,6 +229,51 @@ class FriendManagerAI(DistributedObjectGlobalAI):
 
         self.sendUpdateToAvatarId(recipient, "friendResponse", [yesNoMaybe, context])
         self.notify.debug("AI: friendResponse(%d, %d)" % (yesNoMaybe, context))
+
+    def submitSecret(self, secret):
+        """submitSecret(self, string secret)
+
+        Sent by the client to the AI to submit a "secret" typed in by
+        the user.
+        """
+        avId = self.air.getAvatarIdFromSender()
+
+        # We have to sit on this request for a few seconds before
+        # processing it.  This delay is solely to discourage password
+        # guessing.
+        taskName = "secret-" + str(avId)
+        taskMgr.remove(taskName)
+        if FriendManagerAI.SecretDelay:
+            taskMgr.doMethodLater(FriendManagerAI.SecretDelay,
+                                  self.continueSubmission,
+                                  taskName,
+                                  extraArgs = (avId, secret))
+        else:
+            # No delay
+            self.continueSubmission(avId, secret)
+
+    def continueSubmission(self, avId, secret):
+        """continueSubmission(self, avId, secret)
+        Finishes the work of submitSecret, a short time later.
+        """
+        self.air.submitSecret(avId, secret)
+
+    def submitSecretReply(self, result, recipient, avId):
+        self.down_submitSecretResponse(recipient, result, avId)
+
+    def down_submitSecretResponse(self, recipient, result, avId):
+        """submitSecret(self, int8 result, int32 avId)
+
+        Sent by the AI to the client in response to submitSecret().
+        result is one of:
+
+          0 - Failure.  The secret is unknown or has timed out.
+          1 - Success.  You are now friends with the indicated avId.
+          2 - Failure.  One of the avatars has too many friends already.
+          3 - Failure.  You just used up your own secret.
+
+        """
+        self.sendUpdateToAvatarId(recipient, 'submitSecretResponse', [result, avId])
 
     ### Support methods
 
@@ -409,3 +463,18 @@ class FriendManagerAI(DistributedObjectGlobalAI):
             avatar.d_friendsNotify(invite.inviterId, 2)
 
         self.clearInvite(invite)
+
+    def requestSecretReply(self, result, secret, requesterId):
+        self.down_requestSecretResponse(requesterId, result, secret)
+
+    def down_requestSecretResponse(self, recipient, result, secret):
+        """requestSecret(self, int8 result, string secret)
+
+        Sent by the AI to the client in response to requestSecret().
+        result is one of:
+
+          0 - Too many secrets outstanding.  Try again later.
+          1 - Success.  The new secret is supplied.
+
+        """
+        self.sendUpdateToAvatarId(recipient, 'requestSecretResponse', [result, secret])
