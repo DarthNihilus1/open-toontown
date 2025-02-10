@@ -717,7 +717,11 @@ class NPCMoviePlayer(DirectObject.DirectObject):
         lineLength = len(line)
         avatarName = line[1]
         avatar = self.getVar(avatarName)
-        chatString = eval('TTLocalizer.' + line[2] % 'Mickey')
+        notify.info("MickeyNameConfirm, "+avatar.getName())
+        if avatar.getName() == 'mickey':
+            chatString = eval('TTLocalizer.' + line[2] % 'Mickey')
+        else:
+            chatString = eval('TTLocalizer.' + line[2] % 'Minnie')
         quitButton, extraChatFlags, dialogueList = self.parseExtraChatArgs(line[3:])
         return Func(avatar.setLocalPageChat, chatString, quitButton, extraChatFlags, dialogueList)
 
@@ -729,7 +733,7 @@ class NPCMoviePlayer(DirectObject.DirectObject):
         toAvatar = self.getVar(toAvatarKey)
         localizerAvatarName = toAvatar.getName().capitalize()
         toAvatarName = eval('TTLocalizer.' + localizerAvatarName)
-        if toAvatar.getName() == 'Mickey':
+        if toAvatar.getName() == 'mickey':
             chatString = eval('TTLocalizer.' + line[3] % 'Mickey')
         else:
             chatString = eval('TTLocalizer.' + line[3] % 'Minnie')
