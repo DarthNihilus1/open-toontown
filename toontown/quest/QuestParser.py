@@ -717,7 +717,6 @@ class NPCMoviePlayer(DirectObject.DirectObject):
         lineLength = len(line)
         avatarName = line[1]
         avatar = self.getVar(avatarName)
-        notify.info("MickeyNameConfirm, "+avatar.getName())
         if avatar.getName() == 'mickey':
             chatString = eval('TTLocalizer.' + line[2] % 'Mickey')
         else:
