@@ -713,9 +713,29 @@ class NPCMoviePlayer(DirectObject.DirectObject):
         quitButton, extraChatFlags, dialogueList = self.parseExtraChatArgs(line[4:])
         return Func(avatar.setLocalPageChat, chatString, quitButton, extraChatFlags, dialogueList)
 
-   
+    def parseCCChatConfirm(self, line) -> Func:
+        lineLength = len(line)
+        avatarName = line[1]
+        avatar = self.getVar(avatarName)
+        chatString = eval('TTLocalizer.' + line[2] % 'Mickey')
+        quitButton, extraChatFlags, dialogueList = self.parseExtraChatArgs(line[3:])
+        return Func(avatar.setLocalPageChat, chatString, quitButton, extraChatFlags, dialogueList)
 
-
+    def parseCCChatToConfirm(self, line):
+        lineLength = len(line)
+        avatarKey = line[1]
+        avatar = self.getVar(avatarKey)
+        toAvatarKey = line[2]
+        toAvatar = self.getVar(toAvatarKey)
+        localizerAvatarName = toAvatar.getName().capitalize()
+        toAvatarName = eval('TTLocalizer.' + localizerAvatarName)
+        if toAvatar.getName() == 'Mickey':
+            chatString = eval('TTLocalizer.' + line[3] % 'Mickey')
+        else:
+            chatString = eval('TTLocalizer.' + line[3] % 'Minnie')
+        chatString = chatString.replace('%s', toAvatarName)
+        quitButton, extraChatFlags, dialogueList = self.parseExtraChatArgs(line[4:])
+        return Func(avatar.setLocalPageChat, chatString, quitButton, extraChatFlags, dialogueList)
 
     def parsePlaySfx(self, line):
         if len(line) == 2:
